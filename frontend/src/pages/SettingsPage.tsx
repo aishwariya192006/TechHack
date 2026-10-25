@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
 export default function SettingsPage() {
-  const [apiUrl, setApiUrl] = useState('http://localhost:8000/api/v1')
+  const [apiUrl, setApiUrl] = useState(
+    (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api/v1'
+  )
   const [notifications, setNotifications] = useState(true)
   const [autoAnalysis, setAutoAnalysis] = useState(false)
   const [saved, setSaved] = useState(false)
