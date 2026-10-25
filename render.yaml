@@ -56,6 +56,24 @@ services:
       - key: DB_POOL_RECYCLE
         value: "1800"
 
+  # ----------------------------------------------------------------------------
+  # React + Vite Frontend Dashboard Service
+  # ----------------------------------------------------------------------------
+  - type: static
+    name: brandshield-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: brandshield-api
+          property: host
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
 # ------------------------------------------------------------------------------
 # Managed PostgreSQL 16 Database
 # ------------------------------------------------------------------------------
