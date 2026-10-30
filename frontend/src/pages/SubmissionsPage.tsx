@@ -116,38 +116,22 @@ export default function SubmissionsPage() {
     setActionMessage(null);
     setActionLoading(true);
     try {
-      const revs = await submissionsApi.listRevisions(sub.id);
+      const [revs, fList, revHistory] = await Promise.all([
+        submissionsApi.listRevisions(sub.id).catch(() => []),
+        sub.current_revision_id ? analysisApi.getFindingsForRevision(sub.current_revision_id).catch(() => []) : Promise.resolve([]),
+        workflowApi.getReviews(sub.id).catch(() => []),
+      ]);
       setRevisions(revs || []);
+      setFindings(fList || []);
+      setReviews(revHistory || []);
 
-      if (sub.current_revision_id) {
-        try {
-          const fList = await analysisApi.getFindingsForRevision(sub.current_revision_id);
-          setFindings(fList || []);
-        } catch {
-          setFindings([]);
-        }
-      } else {
-        setFindings([]);
-      }
-
-      // If multiple revisions exist, fetch diff
+      // If multiple revisions exist, fetch diff concurrently in background
       if (revs && revs.length > 1) {
-        try {
-          const diffData = await submissionsApi.getRevisionDiff(sub.id, 1, revs.length);
-          setDiff(diffData);
-        } catch {
-          setDiff(null);
-        }
+        submissionsApi.getRevisionDiff(sub.id, 1, revs.length)
+          .then((diffData) => setDiff(diffData))
+          .catch(() => setDiff(null));
       } else {
         setDiff(null);
-      }
-
-      // Fetch official review determinations & comments
-      try {
-        const revHistory = await workflowApi.getReviews(sub.id);
-        setReviews(revHistory || []);
-      } catch {
-        setReviews([]);
       }
     } catch (err: any) {
       setActionMessage(`Error loading submission details: ${err.message}`);

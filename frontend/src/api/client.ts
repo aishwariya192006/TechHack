@@ -384,10 +384,21 @@ export const workflowApi = {
   },
 };
 
+let _cachedProfiles: BrandProfileItem[] | null = null;
+let _cachedProfilesExpiry = 0;
+let _cachedActiveProfile: BrandProfileItem | null = null;
+let _cachedActiveProfileExpiry = 0;
+
 export const brandsApi = {
   async getActiveProfile(): Promise<BrandProfileItem | null> {
+    const now = Date.now();
+    if (_cachedActiveProfile && now < _cachedActiveProfileExpiry) {
+      return _cachedActiveProfile;
+    }
     try {
       const res = await apiClient.get<BrandProfileItem>('/brands/active-profile');
+      _cachedActiveProfile = res.data;
+      _cachedActiveProfileExpiry = now + 60000;
       return res.data;
     } catch {
       return null;
@@ -395,9 +406,14 @@ export const brandsApi = {
   },
 
   async listProfiles(): Promise<BrandProfileItem[]> {
-    // Try admin profiles first; fall back to specific seeded profile
+    const now = Date.now();
+    if (_cachedProfiles && now < _cachedProfilesExpiry) {
+      return _cachedProfiles;
+    }
     try {
       const res = await apiClient.get('/brands/profiles');
+      _cachedProfiles = res.data;
+      _cachedProfilesExpiry = now + 60000;
       return res.data;
     } catch {
       return [];

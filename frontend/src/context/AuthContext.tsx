@@ -48,22 +48,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const data = await authApi.login(email, password);
       setToken(data.access_token);
-      const me = await authApi.getMe();
-      setUser(me);
-      // Load brand profile
-      try {
-        const active = await brandsApi.getActiveProfile();
+      if (data.user) {
+        setUser(data.user);
+      } else {
+        const me = await authApi.getMe();
+        setUser(me);
+      }
+      // Non-blocking background sync of brand profile
+      brandsApi.getActiveProfile().then((active) => {
         if (active?.id) {
           setActiveBrandProfileId(active.id);
         } else {
-          const profiles = await brandsApi.listProfiles();
-          if (profiles.length > 0) {
-            setActiveBrandProfileId(profiles[0].id);
-          }
+          brandsApi.listProfiles().then((profiles) => {
+            if (profiles.length > 0) {
+              setActiveBrandProfileId(profiles[0].id);
+            }
+          }).catch(() => {});
         }
-      } catch {
-        // keep default
-      }
+      }).catch(() => {});
     } finally {
       setIsLoading(false);
     }
@@ -74,20 +76,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const data = await authApi.signup(regData);
       setToken(data.access_token);
-      const me = await authApi.getMe();
-      setUser(me);
-      try {
-        const active = await brandsApi.getActiveProfile();
-        if (active?.id) {
-          setActiveBrandProfileId(active.id);
-        } else {
-          const profiles = await brandsApi.listProfiles();
-          if (profiles.length > 0) {
-            setActiveBrandProfileId(profiles[0].id);
-          }
-        }
-      } catch {
-        // keep default
+      if (data.user) {
+        setUser(data.user);
+      } else {
+        const me = await authApi.getMe();
+        setUser(me);
       }
     } finally {
       setIsLoading(false);
