@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,34 +8,13 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
 
-  // Form states matching user screenshot
-  const [firstName, setFirstName] = useState('Auditor First');
-  const [lastName, setLastName] = useState('Auditor Last');
-  const [email, setEmail] = useState('dharshana@gmail.com');
-  const [countryCode, setCountryCode] = useState('+1');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedRole, setSelectedRole] = useState('Select Role...');
-  const [password, setPassword] = useState('DemoSecure2026!');
+  // Form states: no prefilled credentials
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
-
-  const roleDropdownRef = useRef<HTMLDivElement>(null);
-  const countryDropdownRef = useRef<HTMLFieldSetElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (roleDropdownRef.current && !roleDropdownRef.current.contains(e.target as Node)) {
-        setIsRoleDropdownOpen(false);
-      }
-      if (countryDropdownRef.current && !countryDropdownRef.current.contains(e.target as Node)) {
-        setShowCountryDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,52 +25,28 @@ export default function LoginPage() {
     return null;
   }
 
-  // Pre-configured role profiles
-  const handleSelectRole = (roleKey: string) => {
-    setSelectedRole(roleKey);
-    setIsRoleDropdownOpen(false);
-    setError(null);
-
-    // In Sign In mode, autofill demo accounts for convenience
-    if (mode === 'signin') {
-      if (roleKey === 'Administrator' || roleKey === 'SuperAdmin') {
-        setFirstName('Sam');
-        setLastName('Administrator');
-        setEmail('admin@acme.com');
-        setPassword('DemoSecure2026!');
-        setPhoneNumber('(555) 019-2831');
-      } else if (roleKey === 'Reviewer' || roleKey === 'Auditor') {
-        setFirstName('Auditor');
-        setLastName('First');
-        setEmail('reviewer@acme.com');
-        setPassword('DemoSecure2026!');
-        setPhoneNumber('(555) 234-5678');
-      } else if (roleKey === 'Creator' || roleKey === 'Test role') {
-        setFirstName('Alex');
-        setLastName('Creator');
-        setEmail('creator@acme.com');
-        setPassword('DemoSecure2026!');
-        setPhoneNumber('(555) 987-6543');
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setError('Please provide your corporate work email.');
+      setError('Please provide your email address.');
       return;
     }
     if (!password) {
       setError('Please provide your password.');
       return;
     }
-    if (mode === 'signup' && password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
+    if (mode === 'signup') {
+      if (!firstName.trim() || !lastName.trim()) {
+        setError('Please provide your first and last name.');
+        return;
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters long.');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -99,29 +54,40 @@ export default function LoginPage() {
       if (mode === 'signin') {
         await login(trimmedEmail, password);
       } else {
-        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || trimmedEmail.split('@')[0];
-        // Public signup creates Creator accounts only. Reviewer and Administrator accounts are created by an administrator.
-        const roleEnum: 'CREATOR' | 'REVIEWER' | 'ADMINISTRATOR' = 'CREATOR';
-
+        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
         await signup({
           email: trimmedEmail,
           password,
           full_name: fullName,
-          role: roleEnum,
+          role: 'CREATOR',
         });
       }
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
-      const msg = err.message || (mode === 'signup' ? 'Registration failed.' : 'Authentication failed.');
-      setError(msg);
+      const isNetworkIssue =
+        err.code === 'ERR_NETWORK' ||
+        err.message === 'Network Error' ||
+        !err.response ||
+        (err.message && err.message.toLowerCase().includes('network'));
+      if (isNetworkIssue) {
+        setError("Can't reach the server. It may be waking up, try again in a minute.");
+      } else {
+        const msg = err.message || (mode === 'signup' ? 'Registration failed.' : 'Authentication failed.');
+        setError(msg);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleRetry = () => {
+    const fakeEvent = { preventDefault: () => {} } as React.FormEvent;
+    handleSubmit(fakeEvent);
+  };
+
   return (
     <div className="signin-page-wrapper">
-      {/* ── 3D Geometric Floating Scene (matching screenshot) ── */}
+      {/* 3D Geometric Floating Scene */}
       <div className="signin-geom-scene" aria-hidden="true">
         {/* Top-Left 3D Torus */}
         <div className="geom-torus-tl">
@@ -187,7 +153,7 @@ export default function LoginPage() {
           </svg>
         </div>
 
-        {/* Bottom-Right 3D Pyramid / Octahedron */}
+        {/* Bottom-Right 3D Pyramid */}
         <div className="geom-pyramid-br">
           <svg width="110" height="110" viewBox="0 0 100 100" fill="none">
             <defs>
@@ -216,7 +182,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Top Bar matching screenshot ── */}
+      {/* Top Bar */}
       <div className="signin-top-bar">
         {/* Back to Home Pill Button */}
         <button
@@ -239,13 +205,10 @@ export default function LoginPage() {
               Features
             </button>
             <button type="button" className="signin-nav-item" onClick={() => navigate('/')}>
-              Integrations
+              How It Works
             </button>
             <button type="button" className="signin-nav-item" onClick={() => navigate('/')}>
               Governance
-            </button>
-            <button type="button" className="signin-nav-item" onClick={() => navigate('/')}>
-              Solutions
             </button>
             <button
               type="button"
@@ -258,149 +221,43 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ── Main Dual-Card Container ── */}
+      {/* Main Container: Single Centered Card */}
       <div className="signin-main-container">
-        {/* Global Error Banner */}
-        {error && (
-          <div className="signin-error-toast" role="alert">
-            <span style={{ fontSize: 14, fontWeight: 700, padding: '2px 6px', background: '#ef4444', color: '#fff', borderRadius: '50%' }}>!</span>
-            <div style={{ flex: 1 }}>{error}</div>
-            <button
-              type="button"
-              onClick={() => setError(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
-            >
-              X
-            </button>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="signin-cards-grid">
-          {/* ══════ LEFT CARD: USER DETAILS ══════ */}
-          <div className="signin-glass-card signin-card-left">
-            <h2 className="card-section-heading">USER DETAILS</h2>
-
-            {/* Field: First Name */}
-            <fieldset className="legend-fieldset">
-              <legend className="legend-tag">First Name</legend>
-              <input
-                type="text"
-                className="legend-input"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="First Name"
-                required
-              />
-            </fieldset>
-
-            {/* Field: Last Name */}
-            <fieldset className="legend-fieldset">
-              <legend className="legend-tag">Last Name</legend>
-              <input
-                type="text"
-                className="legend-input"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Last Name"
-                required
-              />
-            </fieldset>
-
-            {/* Field: Email */}
-            <fieldset className="legend-fieldset">
-              <legend className="legend-tag">Email</legend>
-              <input
-                type="email"
-                className="legend-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Work Email"
-                required
-                autoComplete="email"
-              />
-            </fieldset>
-
-            {/* Split Row: Country Code + Phone Number */}
-            <div className="split-phone-row">
-              {/* Country Code */}
-              <fieldset className="legend-fieldset country-fieldset" ref={countryDropdownRef}>
-                <legend className="legend-tag">Country Code</legend>
-                <div
-                  className="country-dropdown-btn"
-                  onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                >
-                  <span className="code-text">{countryCode}</span>
-                  <span className="dropdown-arrow">▼</span>
-                </div>
-                {showCountryDropdown && (
-                  <div className="country-menu">
-                    <div
-                      className="country-option"
-                      onClick={() => { setCountryCode('+1'); setShowCountryDropdown(false); }}
-                    >
-                      United States (+1)
-                    </div>
-                    <div
-                      className="country-option"
-                      onClick={() => { setCountryCode('+44'); setShowCountryDropdown(false); }}
-                    >
-                      United Kingdom (+44)
-                    </div>
-                    <div
-                      className="country-option"
-                      onClick={() => { setCountryCode('+49'); setShowCountryDropdown(false); }}
-                    >
-                      Germany (+49)
-                    </div>
-                    <div
-                      className="country-option"
-                      onClick={() => { setCountryCode('+91'); setShowCountryDropdown(false); }}
-                    >
-                      India (+91)
-                    </div>
-                  </div>
-                )}
-              </fieldset>
-
-              {/* Phone Number */}
-              <fieldset className="legend-fieldset phone-fieldset">
-                <legend className="legend-tag">Phone Number</legend>
-                <div className="phone-input-wrap">
-                  <input
-                    type="tel"
-                    className="legend-input phone-inner-input"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Phone Number"
-                  />
-                </div>
-              </fieldset>
+        <div style={{ maxWidth: 440, margin: '0 auto', width: '100%' }}>
+          {/* Global Error Banner */}
+          {error && (
+            <div className="signin-error-toast" role="alert" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, padding: '2px 7px', background: '#ef4444', color: '#fff', borderRadius: '50%', flexShrink: 0 }}>!</span>
+              <div style={{ flex: 1, fontSize: 13, lineHeight: 1.4 }}>{error}</div>
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={submitting}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '4px 10px', fontSize: 12, fontWeight: 600, flexShrink: 0 }}
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => setError(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, flexShrink: 0, color: '#991b1b' }}
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
             </div>
+          )}
 
-            {/* Bottom notice */}
-            <div className="left-card-footer-note">
-              {mode === 'signup' ? (
-                <>
-                  <span style={{ color: '#10b981', marginRight: 4, fontWeight: 700 }}>•</span> Self-Serve Access · Sign up enabled
-                </>
-              ) : (
-                <>
-                  <span className="orange-dot">•</span> Managed Access · Public registration enabled
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* ══════ RIGHT CARD: SIGN IN / SIGN UP ══════ */}
-          <div className="signin-glass-card signin-card-right">
+          <form onSubmit={handleSubmit} className="signin-glass-card" style={{ width: '100%', boxSizing: 'border-box' }}>
             {/* Mode Switcher Tabs */}
-            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.06)', borderRadius: 10, padding: 4, marginBottom: 16 }}>
+            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.06)', borderRadius: 10, padding: 4, marginBottom: 20 }}>
               <button
                 type="button"
                 onClick={() => { setMode('signin'); setError(null); }}
                 style={{
                   flex: 1,
-                  padding: '8px 12px',
+                  padding: '9px 12px',
                   borderRadius: 8,
                   border: 'none',
                   fontWeight: 600,
@@ -416,20 +273,10 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setMode('signup');
-                  setError(null);
-                  if (email === 'dharshana@gmail.com' || email.includes('@acme.com')) {
-                    setEmail('');
-                    setFirstName('');
-                    setLastName('');
-                    setPassword('');
-                    setSelectedRole('Test role');
-                  }
-                }}
+                onClick={() => { setMode('signup'); setError(null); }}
                 style={{
                   flex: 1,
-                  padding: '8px 12px',
+                  padding: '9px 12px',
                   borderRadius: 8,
                   border: 'none',
                   fontWeight: 600,
@@ -445,65 +292,55 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <h1 className="signin-main-heading">{mode === 'signup' ? 'Create Account' : 'Sign In'}</h1>
+            <h1 className="signin-main-heading" style={{ marginBottom: 20 }}>
+              {mode === 'signup' ? 'Create Account' : 'Sign In'}
+            </h1>
 
-            {mode === 'signup' ? (
-              <div className="role-section-wrapper">
-                <label className="role-eyebrow-label">ROLE</label>
-                <div className="role-select-box" style={{ background: 'rgba(255, 255, 255, 0.85)', cursor: 'default' }}>
-                  <span className="role-selected-text">Creator</span>
-                  <span className="role-item-tag creator" style={{ marginLeft: 8 }}>CREATOR ONLY</span>
-                </div>
-                <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
-                  Public sign up creates Creator accounts only. Reviewer and Administrator accounts are provisioned by an administrator.
-                </div>
-              </div>
-            ) : (
-              <div className="role-section-wrapper" ref={roleDropdownRef}>
-                <label className="role-eyebrow-label">ROLE</label>
+            {/* In Sign Up mode: First Name & Last Name */}
+            {mode === 'signup' && (
+              <>
+                <fieldset className="legend-fieldset" style={{ marginBottom: 14 }}>
+                  <legend className="legend-tag">First Name</legend>
+                  <input
+                    type="text"
+                    className="legend-input"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First Name"
+                    required
+                  />
+                </fieldset>
 
-                {/* Role Dropdown Box */}
-                <div
-                  className={`role-select-box ${isRoleDropdownOpen ? 'role-box-open' : ''}`}
-                  onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-                >
-                  <span className="role-selected-text">{selectedRole}</span>
-                  <span className="role-arrow">▼</span>
-                </div>
-
-                {/* Role Dropdown Menu */}
-                {isRoleDropdownOpen && (
-                  <div className="role-dropdown-menu">
-                    <div
-                      className={`role-menu-item ${selectedRole === 'Creator' || selectedRole === 'Test role' ? 'active' : ''}`}
-                      onClick={() => handleSelectRole('Creator')}
-                    >
-                      <span className="role-item-name">Creator</span>
-                      <span className="role-item-tag creator">CREATOR</span>
-                    </div>
-
-                    <div
-                      className={`role-menu-item ${selectedRole === 'Reviewer' || selectedRole === 'Auditor' ? 'active' : ''}`}
-                      onClick={() => handleSelectRole('Reviewer')}
-                    >
-                      <span className="role-item-name">Reviewer</span>
-                      <span className="role-item-tag reviewer">REVIEWER</span>
-                    </div>
-
-                    <div
-                      className={`role-menu-item ${selectedRole === 'Administrator' || selectedRole === 'SuperAdmin' ? 'active' : ''}`}
-                      onClick={() => handleSelectRole('Administrator')}
-                    >
-                      <span className="role-item-name">Administrator</span>
-                      <span className="role-item-tag admin">ADMIN</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+                <fieldset className="legend-fieldset" style={{ marginBottom: 14 }}>
+                  <legend className="legend-tag">Last Name</legend>
+                  <input
+                    type="text"
+                    className="legend-input"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last Name"
+                    required
+                  />
+                </fieldset>
+              </>
             )}
 
-            {/* Seamless Password Field (integrated fieldset) */}
-            <fieldset className="legend-fieldset password-fieldset">
+            {/* Email Field */}
+            <fieldset className="legend-fieldset" style={{ marginBottom: 14 }}>
+              <legend className="legend-tag">Email</legend>
+              <input
+                type="email"
+                className="legend-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Work Email"
+                required
+                autoComplete="email"
+              />
+            </fieldset>
+
+            {/* Password Field with Show/Hide */}
+            <fieldset className="legend-fieldset password-fieldset" style={{ marginBottom: 16 }}>
               <legend className="legend-tag">Password</legend>
               <div className="password-input-wrap">
                 <input
@@ -511,7 +348,7 @@ export default function LoginPage() {
                   className="legend-input password-inner-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
+                  placeholder={mode === 'signup' ? 'Password (min. 8 characters)' : 'Password'}
                   required
                 />
                 <button
@@ -526,19 +363,27 @@ export default function LoginPage() {
               </div>
             </fieldset>
 
+            {/* Creator-only badge in Sign Up mode */}
+            {mode === 'signup' && (
+              <div style={{ fontSize: 12, color: '#475569', marginBottom: 16, padding: '8px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: 10, border: '1px solid rgba(0,0,0,0.06)' }}>
+                New accounts are Creator only. Reviewer and Administrator roles are provisioned by an administrator.
+              </div>
+            )}
+
             {/* Action Button */}
             <button
               type="submit"
               className="create-account-or-signin-btn"
               disabled={submitting}
+              style={{ marginTop: 4 }}
             >
               {submitting
                 ? (mode === 'signup' ? 'Creating Account…' : 'Authenticating…')
                 : (mode === 'signup' ? 'Create Account & Sign In   →' : 'Sign In   →')}
             </button>
 
-            {/* Mode Switcher & Support Footer */}
-            <div className="signin-support-footer">
+            {/* Mode Switcher Footer */}
+            <div className="signin-support-footer" style={{ marginTop: 18 }}>
               {mode === 'signin' ? (
                 <>
                   <span>Don't have an account? </span>
@@ -548,13 +393,6 @@ export default function LoginPage() {
                     onClick={() => {
                       setMode('signup');
                       setError(null);
-                      if (email === 'dharshana@gmail.com' || email.includes('@acme.com')) {
-                        setEmail('');
-                        setFirstName('');
-                        setLastName('');
-                        setPassword('');
-                        setSelectedRole('Test role');
-                      }
                     }}
                     style={{ fontWeight: 700, color: '#4f46e5' }}
                   >
@@ -575,11 +413,11 @@ export default function LoginPage() {
                 </>
               )}
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
 
-      {/* ── Contact Support Workspace Modal ── */}
+      {/* Contact Support Modal */}
       {showSupportModal && (
         <div className="modal-overlay" onClick={() => setShowSupportModal(false)}>
           <div className="support-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -595,27 +433,24 @@ export default function LoginPage() {
                 className="modal-close-btn"
                 onClick={() => setShowSupportModal(false)}
               >
-                X
+                ✕
               </button>
             </div>
             <div className="support-modal-body">
               <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.6, marginBottom: 16 }}>
-                BrandShield AI uses <strong>Managed Role-Based Access</strong>. Public self-registration
-                is disabled to prevent unauthorized compliance clearance.
+                BrandShield AI uses <strong>Managed Role-Based Access</strong>. New registrations receive
+                Creator privileges. Reviewer and Administrator roles are assigned by workspace administrators.
               </p>
               <div className="support-box">
                 <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 4 }}>
-                  Request New Access
+                  Contact Administrator
                 </div>
                 <div style={{ fontSize: 13, color: '#475569' }}>
-                  Email your designated organization administrator or reach support at:{' '}
+                  Reach your organization administrator or support at:{' '}
                   <a href="mailto:support@brandshield.ai" style={{ color: '#4f46e5', fontWeight: 600 }}>
                     support@brandshield.ai
                   </a>
                 </div>
-              </div>
-              <div style={{ marginTop: 16, fontSize: 12, color: '#64748b' }}>
-                <em>Authorized test accounts:</em> Select <strong>SuperAdmin</strong>, <strong>Auditor</strong>, or <strong>Test role</strong> in the role dropdown to sign in instantly.
               </div>
             </div>
             <div className="support-modal-footer">

@@ -1,7 +1,23 @@
 import axios from 'axios';
 
-// Resolve API base URL: defaults to local backend /api/v1
-const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:8000/api/v1';
+// Resolve API base URL: reads VITE_API_URL, strips trailing slashes, ensures https in production
+export function resolveApiBaseUrl(raw?: string): string {
+  const trimmed = raw?.trim();
+  if (!trimmed) {
+    return import.meta.env.PROD ? '/api/v1' : 'http://localhost:8000/api/v1';
+  }
+  let url = trimmed.replace(/\/+$/, '');
+  // If only a host was passed without protocol (e.g. Render's property: host -> brandshield-api.onrender.com)
+  if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/')) {
+    url = `https://${url}`;
+  }
+  if (!url.endsWith('/api/v1')) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+}
+
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL as string);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -25,7 +41,9 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     let message = error.message;
-    if (error.response?.data) {
+    if (error.code === 'ERR_NETWORK' || error.message === 'Network Error' || !error.response) {
+      message = "Can't reach the server. It may be waking up, try again in a minute.";
+    } else if (error.response?.data) {
       const data = error.response.data;
       message = data.detail || data.title || data.message || JSON.stringify(data);
     }

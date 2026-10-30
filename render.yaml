@@ -39,7 +39,10 @@ services:
       - key: HASH_CHAIN_SALT
         generateValue: true
 
-      # Strict CORS configuration supporting Vercel production origins
+      # Strict CORS configuration supporting Vercel and Render production origins
+      - key: CORS_ORIGINS
+        value: http://localhost:5173,http://127.0.0.1:5173,https://brandshield-frontend.onrender.com
+
       - key: CORS_ALLOW_ORIGIN_REGEX
         value: ^https://(.*\.vercel\.app|.*\.onrender\.com)$
 

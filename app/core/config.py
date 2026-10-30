@@ -1,6 +1,6 @@
 from functools import lru_cache
-from typing import Literal, Optional
-from pydantic import Field, PostgresDsn, computed_field
+from typing import Any, Literal, Optional
+from pydantic import Field, PostgresDsn, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -77,6 +77,36 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
     ]
     CORS_ALLOW_ORIGIN_REGEX: str = r"^https://(.*\.vercel\.app|.*\.onrender\.com)$"
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: Any) -> list[str]:
+        default_dev = [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:4173",
+            "http://127.0.0.1:4173",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+        ]
+        if isinstance(v, str):
+            v_str = v.strip()
+            if v_str.startswith("[") and v_str.endswith("]"):
+                import json
+                try:
+                    items = json.loads(v_str)
+                    parsed = [str(x).strip().rstrip("/") for x in items if str(x).strip()]
+                    return list(dict.fromkeys(parsed + default_dev))
+                except Exception:
+                    pass
+            parsed = [x.strip().rstrip("/") for x in v.split(",") if x.strip()]
+            return list(dict.fromkeys(parsed + default_dev))
+        elif isinstance(v, (list, tuple)):
+            parsed = [str(x).strip().rstrip("/") for x in v if str(x).strip()]
+            return list(dict.fromkeys(parsed + default_dev))
+        return default_dev
 
     # Redis Cache & Token Bucket Rate Limiting
     REDIS_URL: str = "redis://localhost:6379/0"
