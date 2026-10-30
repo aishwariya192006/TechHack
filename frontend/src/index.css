@@ -1908,3 +1908,523 @@ input.form-input:focus {
   font-size: 13.5px;
   cursor: pointer;
 }
+
+/* =====================================================
+   PRO-TIER 3D SPATIAL DESIGN SYSTEM & MICRO-INTERACTIONS
+   Linear / VisionOS Inspired Spatial Depth Architecture
+   ===================================================== */
+
+/* ── 3D Tilt Card Base ── */
+.tilt-card {
+  border-radius: var(--radius-lg);
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  position: relative;
+}
+
+.tilt-inner {
+  transform-style: preserve-3d;
+  height: 100%;
+}
+
+.tilt-depth-1 { transform: translateZ(12px); }
+.tilt-depth-2 { transform: translateZ(24px); }
+.tilt-depth-3 { transform: translateZ(36px); }
+
+/* ── 3D Spatial KPI Stat Cards ── */
+.stat-card-3d {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-lg);
+  padding: 24px 22px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 10px 30px -5px rgba(20, 40, 120, 0.12),
+    0 20px 45px -10px rgba(99, 102, 241, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.stat-card-3d:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 
+    0 18px 42px -6px rgba(20, 40, 120, 0.2),
+    0 26px 60px -8px rgba(99, 102, 241, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.stat-3d-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.stat-3d-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.35);
+  transform: translateZ(30px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card-3d:hover .stat-3d-icon {
+  transform: translateZ(42px) scale(1.1);
+}
+
+.stat-3d-value {
+  font-size: 38px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  transform: translateZ(22px);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.stat-3d-label {
+  font-size: 13px;
+  font-weight: 650;
+  color: #334155;
+  transform: translateZ(16px);
+}
+
+.stat-3d-footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  transform: translateZ(12px);
+}
+
+/* ── 3D Holographic Integrity Seal Badge ── */
+.three-d-shield-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.three-d-shield-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(240, 245, 255, 0.65));
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 
+    0 16px 40px rgba(40, 60, 160, 0.18),
+    0 4px 12px rgba(99, 102, 241, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.three-d-shield-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 22px 50px rgba(40, 60, 160, 0.25),
+    0 6px 18px rgba(99, 102, 241, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.shield-core-box {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.shield-ambient-glow {
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(6, 182, 212, 0) 70%);
+  border-radius: 50%;
+  filter: blur(12px);
+  animation: pulseShieldGlow 3s infinite alternate ease-in-out;
+}
+
+@keyframes pulseShieldGlow {
+  0% { transform: scale(0.85); opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 0.9; }
+}
+
+.shield-orbital-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(99, 102, 241, 0.4);
+  pointer-events: none;
+}
+
+.shield-orbital-ring.ring-1 {
+  width: 66px;
+  height: 66px;
+  animation: rotateOrbitalClockwise 12s linear infinite;
+}
+
+.shield-orbital-ring.ring-2 {
+  width: 78px;
+  height: 78px;
+  border-color: rgba(6, 182, 212, 0.3);
+  animation: rotateOrbitalCounter 16s linear infinite;
+}
+
+@keyframes rotateOrbitalClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotateOrbitalCounter {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+.shield-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  position: relative;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+  transform: translateZ(20px);
+}
+
+.shield-lock-icon {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #10b981;
+  color: #fff;
+  border-radius: 50%;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+}
+
+.shield-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shield-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #047857;
+}
+
+.shield-status-pill .pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.shield-blocks-count {
+  font-size: 17px;
+  font-weight: 850;
+  color: #0f172a;
+}
+
+.shield-subtitle {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* ── 3D Isometric Revision Lineage DAG ── */
+.three-d-dag-container {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: 0 16px 40px rgba(30, 50, 130, 0.1);
+  margin-bottom: 24px;
+}
+
+.dag-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.dag-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 750;
+  color: #0f172a;
+}
+
+.dag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dag-track-isometric {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 12px 6px;
+}
+
+.dag-node-3d {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 1);
+  border-radius: 14px;
+  padding: 12px 16px;
+  cursor: pointer;
+  min-width: 170px;
+  position: relative;
+  box-shadow: 
+    0 8px 24px rgba(35, 55, 140, 0.1),
+    0 2px 6px rgba(35, 55, 140, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+
+.dag-node-3d:hover {
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 
+    0 16px 36px rgba(35, 55, 140, 0.18),
+    0 4px 10px rgba(99, 102, 241, 0.25);
+  border-color: #6366f1;
+}
+
+.dag-node-3d.active {
+  background: #ffffff;
+  border-color: #4f46e5;
+  box-shadow: 
+    0 12px 32px rgba(79, 70, 229, 0.3),
+    0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.dag-node-3d.approved {
+  border-color: #10b981;
+}
+
+.node-3d-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.node-3d-cap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #fff;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 750;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+}
+
+.node-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.node-v-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.node-status-approved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.node-status-flagged {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #d97706;
+}
+
+.node-status-clean {
+  font-size: 10px;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.node-hash-code code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 10px;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.node-author {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.dag-connector-beam {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.beam-line {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+  border-radius: 99px;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+.beam-arrow {
+  position: absolute;
+  right: -4px;
+  color: #06b6d4;
+}
+
+/* ── 3D Laser Hologram Scanner (For Brand Analysis Page) ── */
+.scanner-3d-box {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.scanner-beam-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #06b6d4, #6366f1, transparent);
+  box-shadow: 0 0 16px 3px rgba(6, 182, 212, 0.8), 0 0 30px 6px rgba(99, 102, 241, 0.6);
+  z-index: 10;
+  animation: scanLaser 2.2s infinite ease-in-out;
+}
+
+@keyframes scanLaser {
+  0% { top: 0%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── 3D Tactile Buttons ── */
+.btn-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 0 #3730a3, 0 8px 18px rgba(79, 70, 229, 0.35);
+}
+
+.btn-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #3730a3, 0 12px 24px rgba(79, 70, 229, 0.45);
+}
+
+.btn-3d:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #3730a3, 0 4px 10px rgba(79, 70, 229, 0.25);
+}
+
+/* ── 3D Floating Block Viewer (For Cryptographic Audit Ledger) ── */
+.block-3d-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  border-radius: 14px;
+  padding: 14px 18px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px rgba(25, 45, 120, 0.08);
+  position: relative;
+}
+
+.block-3d-card:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: 0 16px 36px rgba(25, 45, 120, 0.16), 0 0 0 1.5px #6366f1;
+}
+
+/* ── Smooth Page Depth Transition ── */
+.fade-in {
+  animation: fadeInDepth 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInDepth {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+

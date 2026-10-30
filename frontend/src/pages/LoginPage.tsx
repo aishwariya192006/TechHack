@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import TiltCard from '../components/TiltCard';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -266,6 +267,7 @@ export default function LoginPage() {
             </div>
           )}
 
+          <TiltCard maxTilt={5} glare={true} style={{ borderRadius: 28, width: '100%' }}>
           <form onSubmit={handleSubmit} className="signin-glass-card" style={{ width: '100%', boxSizing: 'border-box' }}>
             {/* Mode Switcher Tabs */}
             <div style={{ display: 'flex', background: 'rgba(0,0,0,0.06)', borderRadius: 10, padding: 4, marginBottom: 20 }}>
@@ -473,6 +475,7 @@ export default function LoginPage() {
               )}
             </div>
           </form>
+          </TiltCard>
         </div>
       </div>
 

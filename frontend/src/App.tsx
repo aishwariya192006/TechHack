@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
+import SpatialCanvas from './components/SpatialCanvas';
 import Dashboard from './pages/Dashboard';
 import AnalysisPage from './pages/AnalysisPage';
 import SubmissionsPage from './pages/SubmissionsPage';
@@ -26,10 +27,11 @@ function AppShell() {
     return (
       <div style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--brand-950)', flexDirection: 'column', gap: 16
+        background: '#070a14', flexDirection: 'column', gap: 16
       }}>
-        <div style={{ width: 40, height: 40, borderRadius: 8, background: '#4f46e5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>BS</div>
-        <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Authenticating session…</div>
+        <SpatialCanvas />
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #06b6d4)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, boxShadow: '0 0 25px rgba(99,102,241,0.5)' }}>BS</div>
+        <div style={{ color: '#94a3b8', fontSize: 14, letterSpacing: '0.05em' }}>Authenticating session…</div>
       </div>
     );
   }
@@ -45,6 +47,7 @@ function AppShell() {
 
   return (
     <div className="app">
+      <SpatialCanvas />
       <Sidebar />
       <div className="main">
         <div className="page fade-in">

@@ -9,6 +9,8 @@ import {
   type RevisionDiff
 } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import ThreeDRevisionDag from '../components/ThreeDRevisionDag';
+import TiltCard from '../components/TiltCard';
 
 const STATUS_BADGE: Record<string, string> = {
   APPROVED: 'badge-success',
@@ -311,17 +313,19 @@ export default function SubmissionsPage() {
       {/* Stats row */}
       <div className="grid-4" style={{ marginBottom: 24 }}>
         {[
-          { label: 'Total Submissions', val: submissions.length, color: 'var(--text-primary)' },
-          { label: 'Approved', val: submissions.filter((s) => s.workflow_state === 'APPROVED').length, color: '#34d399' },
-          { label: 'In Review Queue', val: submissions.filter((s) => s.workflow_state === 'IN_HUMAN_REVIEW').length, color: '#fbbf24' },
-          { label: 'Changes Requested', val: submissions.filter((s) => s.workflow_state === 'CHANGES_REQUESTED').length, color: '#f87171' },
+          { label: 'Total Submissions', val: submissions.length, color: '#4f46e5', accent: 'rgba(99,102,241,0.18)' },
+          { label: 'Approved', val: submissions.filter((s) => s.workflow_state === 'APPROVED').length, color: '#059669', accent: 'rgba(16,185,129,0.18)' },
+          { label: 'In Review Queue', val: submissions.filter((s) => s.workflow_state === 'IN_HUMAN_REVIEW').length, color: '#d97706', accent: 'rgba(245,158,11,0.18)' },
+          { label: 'Changes Requested', val: submissions.filter((s) => s.workflow_state === 'CHANGES_REQUESTED').length, color: '#dc2626', accent: 'rgba(239,68,68,0.18)' },
         ].map((s) => (
-          <div key={s.label} className="stat-card">
-            <div className="stat-value" style={{ color: s.color, fontSize: 28 }}>
-              {loading ? '…' : s.val}
+          <TiltCard key={s.label} maxTilt={8} glare={true} style={{ borderRadius: 'var(--radius-md)' }}>
+            <div className="stat-card" style={{ '--card-accent': s.accent } as any}>
+              <div className="stat-value" style={{ color: s.color, fontSize: 28, fontWeight: 800 }}>
+                {loading ? '…' : s.val}
+              </div>
+              <div className="stat-label">{s.label}</div>
             </div>
-            <div className="stat-label">{s.label}</div>
-          </div>
+          </TiltCard>
         ))}
       </div>
 
@@ -733,26 +737,19 @@ export default function SubmissionsPage() {
               </div>
             )}
 
-            {/* Revision Content Snapshot */}
+            {/* 3D Isometric Revision History DAG */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>
-                Revision History DAG ({revisions.length} committed nodes)
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-                {revisions.map((rev) => (
-                  <span
-                    key={rev.id}
-                    className="badge"
-                    style={{
-                      background: rev.id === selectedSub.current_revision_id ? 'var(--brand-500)' : 'var(--glass-bg)',
-                      border: '1px solid var(--glass-border)',
-                      fontSize: 12,
-                    }}
-                  >
-                    v{rev.revision_number} (SHA: {rev.sha256_content_hash?.substring(0, 8)}…)
-                  </span>
-                ))}
-              </div>
+              <ThreeDRevisionDag
+                revisions={revisions.map((rev) => ({
+                  revision_number: rev.revision_number,
+                  sha256_content_hash: rev.sha256_content_hash,
+                  created_at: rev.created_at || '',
+                  is_tip: rev.id === selectedSub.current_revision_id,
+                  findings_count: findings.length,
+                  approved: selectedSub.workflow_state === 'APPROVED',
+                }))}
+                activeRevision={revisions[revisions.length - 1]?.revision_number || 1}
+              />
 
               {revisions.length > 0 && (
                 <div style={{ background: 'var(--brand-950)', border: '1px solid var(--glass-border)', padding: 14, borderRadius: 8, maxHeight: 180, overflowY: 'auto', fontSize: 13, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
