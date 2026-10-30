@@ -126,6 +126,23 @@ async def register_user(
     return new_user
 
 
+@router.get(
+    "/users",
+    response_model=list[UserRead],
+    status_code=status.HTTP_200_OK,
+    summary="List Workspace Users (Administrator Only)",
+)
+async def list_workspace_users(
+    current_admin: Annotated[User, Depends(RequireRole(UserRole.ADMINISTRATOR))],
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+) -> list[User]:
+    """Retrieves all users in the workspace. Restricted to administrators."""
+    res = await session.execute(
+        select(User).where(User.workspace_id == current_admin.workspace_id).order_by(User.created_at.desc())
+    )
+    return list(res.scalars().all())
+
+
 @router.post(
     "/signup",
     response_model=TokenResponse,
@@ -151,7 +168,7 @@ async def signup_user(
         workspace = ws_res.scalar_one_or_none()
     if not workspace:
         ws_slug = f"ws-{uuid.uuid4().hex[:8]}"
-        workspace = Workspace(name="Default Workspace", slug=ws_slug)
+        workspace = Workspace(id=uuid.uuid4(), name="Default Workspace", slug=ws_slug)
         session.add(workspace)
         await session.flush()
         await AuditService.record_event(
@@ -169,14 +186,15 @@ async def signup_user(
             detail=f"An account with email '{payload.email}' already exists. Please sign in instead.",
         )
 
-    # 3. Hash password & create user
+    # 3. Hash password & create user (Public self-registration creates CREATOR accounts only)
     hashed_pwd = hash_password(payload.password)
     new_user = User(
+        id=uuid.uuid4(),
         workspace_id=workspace.id,
         email=payload.email,
         hashed_password=hashed_pwd,
         full_name=payload.full_name,
-        role=payload.role or UserRole.CREATOR,
+        role=UserRole.CREATOR,
         is_active=True,
     )
     session.add(new_user)

@@ -359,6 +359,11 @@ export const workflowApi = {
     const res = await apiClient.get(`/workflow/${submissionId}/reviews`);
     return res.data;
   },
+
+  async assignReviewer(submissionId: string, reviewerId?: string) {
+    const res = await apiClient.post(`/workflow/${submissionId}/assign-reviewer${reviewerId ? `?target_reviewer_id=${reviewerId}` : ''}`);
+    return res.data;
+  },
 };
 
 export const brandsApi = {
@@ -416,6 +421,36 @@ export const auditApi = {
 
   async verifyChain(): Promise<AuditVerificationResult> {
     const res = await apiClient.post('/governance/audit-verify');
+    return res.data;
+  },
+};
+
+export interface ReviewRules {
+  confidence_threshold: number;
+  random_double_check_percentage: number;
+  fact_review_period_days: number;
+  require_evidence_before_approval: boolean;
+}
+
+export interface SystemStatusInfo {
+  backend_connection: string;
+  audit_chain_status: string;
+  chain_valid: boolean;
+  has_historical_break?: boolean;
+  total_records?: number;
+}
+
+export const settingsApi = {
+  async getReviewRules(): Promise<ReviewRules> {
+    const res = await apiClient.get('/settings/review-rules');
+    return res.data;
+  },
+  async updateReviewRules(rules: ReviewRules): Promise<ReviewRules> {
+    const res = await apiClient.put('/settings/review-rules', rules);
+    return res.data;
+  },
+  async getSystemStatus(): Promise<SystemStatusInfo> {
+    const res = await apiClient.get('/settings/system-status');
     return res.data;
   },
 };

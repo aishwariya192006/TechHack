@@ -158,6 +158,18 @@ async def init_db_tables(engine: AsyncEngine | None = None) -> None:
         # Create all tables declared in Base metadata
         await conn.run_sync(Base.metadata.create_all)
 
+        # Idempotently add review_rules column if workspace table pre-existed
+        if conn.dialect.name == "postgresql":
+            await conn.execute(text("ALTER TABLE workspaces ADD COLUMN IF NOT EXISTS review_rules JSONB NOT NULL DEFAULT '{\"confidence_threshold\": 0.85, \"random_double_check_percentage\": 15.0, \"fact_review_period_days\": 90, \"require_evidence_before_approval\": true}'::jsonb;"))
+        elif conn.dialect.name == "sqlite":
+            try:
+                res = await conn.execute(text("PRAGMA table_info(workspaces)"))
+                cols = [r[1] for r in res.fetchall()]
+                if cols and "review_rules" not in cols:
+                    await conn.execute(text("ALTER TABLE workspaces ADD COLUMN review_rules JSON NOT NULL DEFAULT '{\"confidence_threshold\": 0.85, \"random_double_check_percentage\": 15.0, \"fact_review_period_days\": 90, \"require_evidence_before_approval\": true}'"))
+            except Exception:
+                pass
+
     logger.info("Database tables verified/created successfully.")
 
 

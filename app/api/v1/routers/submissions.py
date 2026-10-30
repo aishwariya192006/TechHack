@@ -255,6 +255,17 @@ async def list_workspace_submissions(
         .offset(offset)
         .limit(limit)
     )
+    # Role-based submission visibility enforcement
+    if current_user.role == UserRole.CREATOR:
+        query = query.where(Submission.creator_id == current_user.id)
+    elif current_user.role == UserRole.REVIEWER and not workflow_state:
+        # Reviewer sees all submissions in review or past review
+        query = query.where(Submission.workflow_state.in_([
+            WorkflowState.IN_HUMAN_REVIEW,
+            WorkflowState.TRIAGED,
+            WorkflowState.APPROVED,
+            WorkflowState.CHANGES_REQUESTED,
+        ]))
     if workflow_state:
         query = query.where(Submission.workflow_state == workflow_state)
 
@@ -271,11 +282,13 @@ async def get_dashboard_summary(
     from sqlalchemy import func
     from app.infrastructure.db.models import Finding
 
-    sub_query = (
-        select(Submission.workflow_state, func.count(Submission.id))
-        .where(Submission.workspace_id == current_user.workspace_id)
-        .group_by(Submission.workflow_state)
+    sub_query = select(Submission.workflow_state, func.count(Submission.id)).where(
+        Submission.workspace_id == current_user.workspace_id
     )
+    if current_user.role == UserRole.CREATOR:
+        sub_query = sub_query.where(Submission.creator_id == current_user.id)
+    sub_query = sub_query.group_by(Submission.workflow_state)
+
     sub_res = await session.execute(sub_query)
     state_counts = {str(state.value if hasattr(state, "value") else state): count for state, count in sub_res.all()}
 
@@ -289,8 +302,10 @@ async def get_dashboard_summary(
         .join(DocumentRevision, Finding.revision_id == DocumentRevision.id)
         .join(Submission, DocumentRevision.submission_id == Submission.id)
         .where(Submission.workspace_id == current_user.workspace_id)
-        .group_by(Finding.issue_category, Finding.severity)
     )
+    if current_user.role == UserRole.CREATOR:
+        finding_query = finding_query.where(Submission.creator_id == current_user.id)
+    finding_query = finding_query.group_by(Finding.issue_category, Finding.severity)
     f_res = await session.execute(finding_query)
     findings_by_category: dict[str, int] = {}
     findings_by_severity: dict[str, int] = {}

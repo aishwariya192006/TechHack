@@ -12,7 +12,7 @@ const navItems = [
 ];
 
 const bottomItems = [
-  { path: '/settings', icon: '⚙', label: 'Settings' },
+  { path: '/settings', icon: '◎', label: 'Settings' },
 ];
 
 export default function Sidebar() {
@@ -25,6 +25,20 @@ export default function Sidebar() {
     logout();
     navigate('/login');
   };
+
+  const isCreator = role === 'CREATOR';
+  const isReviewer = role === 'REVIEWER';
+
+  // Role-based navigation visibility
+  const visibleNavItems = navItems.filter((item) => {
+    if (isCreator && (item.path === '/governance' || item.path === '/audit')) {
+      return false;
+    }
+    if (isReviewer && item.path === '/audit') {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <aside className={`sidebar ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
@@ -72,7 +86,7 @@ export default function Sidebar() {
       {/* ── Navigation Items with Floating Glassmorphic Tooltip ── */}
       <nav className="nav">
         {!isCollapsed && <div className="nav-section-label">Navigation</div>}
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <button

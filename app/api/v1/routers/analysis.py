@@ -36,6 +36,7 @@ from app.infrastructure.db.models import (
     Finding,
     Submission,
     User,
+    Workspace,
 )
 from app.infrastructure.db.session import get_async_session
 from app.services.analysis.demo_fallback_cache import DemoFallbackCache
@@ -199,7 +200,11 @@ async def analyze_live_text(
             resource_id=str(payload.brand_profile_id),
         )
 
-    # 0. Query active guidelines to link findings to primary evidence sources
+    # 0. Query active guidelines and workspace review rules to link findings to primary evidence sources
+    ws = await session.get(Workspace, current_user.workspace_id)
+    ws_rules = getattr(ws, "review_rules", {}) or {}
+    conf_threshold = float(ws_rules.get("confidence_threshold", 0.85))
+
     guidelines_query = select(BrandGuideline).where(
         BrandGuideline.brand_profile_id == profile.id,
         BrandGuideline.is_active == True,  # noqa: E712
@@ -302,7 +307,7 @@ async def analyze_live_text(
             has_link = bool(getattr(tone, "linked_guideline_id", None) or getattr(tone, "linked_fact_id", None))
             if not has_link:
                 status_val = TriageStatus.NEEDS_VERIFICATION
-            elif tone.confidence_score >= 0.85:
+            elif tone.confidence_score >= conf_threshold:
                 status_val = TriageStatus.FLAGGED_HIGH_CONFIDENCE
             else:
                 status_val = TriageStatus.ROUTED_TO_HUMAN_LOW_CONFIDENCE

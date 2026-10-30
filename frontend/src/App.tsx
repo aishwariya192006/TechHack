@@ -38,29 +38,13 @@ function AppShell() {
     return <Navigate to="/login" replace />;
   }
 
+  const role = user.role;
+  const isCreator = role === 'CREATOR';
+  const isReviewer = role === 'REVIEWER';
+  const isAdmin = role === 'ADMINISTRATOR';
+
   return (
     <div className="app">
-      {/* Ambient 3D Geometric Scene across all internal pages */}
-      <div className="app-geom-ambient" aria-hidden="true">
-        <div className="landing-geom-cube" style={{ opacity: 0.35, top: '4%', right: '5%' }}>
-          <svg width="120" height="120" viewBox="0 0 140 140" fill="none">
-            <polygon points="70,18 122,46 70,74 18,46" fill="#7da2ff" />
-            <polygon points="18,46 70,74 70,126 18,98" fill="#3b66e8" />
-            <polygon points="70,74 122,46 122,98 70,126" fill="#2950d6" />
-          </svg>
-        </div>
-        <div className="landing-geom-torus" style={{ opacity: 0.35, bottom: '5%', left: '270px' }}>
-          <svg width="130" height="130" viewBox="0 0 150 150" fill="none">
-            <path
-              d="M 75 18 C 108 18 134 42 134 75 C 134 108 108 132 75 132 C 42 132 16 108 16 75 C 16 42 42 18 75 18 Z M 75 48 C 60 48 48 60 48 75 C 48 90 60 102 75 102 C 90 102 102 90 102 75 C 102 60 90 48 75 48 Z"
-              fill="#305fee"
-              transform="rotate(-26 75 75)"
-            />
-          </svg>
-        </div>
-        <div className="landing-dark-sphere sphere-right-small" style={{ top: '30%', right: '8%' }} />
-      </div>
-
       <Sidebar />
       <div className="main">
         <div className="page fade-in">
@@ -69,8 +53,14 @@ function AppShell() {
             <Route path="/analysis" element={<AnalysisPage />} />
             <Route path="/submissions" element={<SubmissionsPage />} />
             <Route path="/guidelines" element={<GuidelinesPage />} />
-            <Route path="/audit" element={<AuditPage />} />
-            <Route path="/governance" element={<GovernancePage />} />
+            <Route
+              path="/governance"
+              element={!isCreator ? <GovernancePage /> : <Navigate to="/dashboard" replace />}
+            />
+            <Route
+              path="/audit"
+              element={isAdmin ? <AuditPage /> : <Navigate to="/dashboard" replace />}
+            />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

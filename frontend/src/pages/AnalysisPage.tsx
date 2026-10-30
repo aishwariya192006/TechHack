@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 const SAMPLE_TEMPLATES = [
   {
     name: 'High-Violation Sample (Banned Terms & Absolutes)',
-    text: 'Our next-generation trading platform delivers a 100% risk-free investment experience with foolproof algorithmic execution. It is the definitive cure for market volatility and ensures guaranteed returns for all enterprise clients.',
+    text: 'Our next-generation trading platform delivers a 100% risk-free investment experience with foolproof algorithmic execution. It is the definitive cure for market volatility and ensures promised returns for all institutional clients.',
   },
   {
     name: 'Stale Fact Sample (Expired Substantiation)',

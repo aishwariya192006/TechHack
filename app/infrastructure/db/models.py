@@ -140,6 +140,20 @@ class Workspace(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         server_default=text("true"),
         doc="Soft-disable flag for suspended enterprise tenants."
     )
+    review_rules: Mapped[dict[str, Any]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=lambda: {
+            "confidence_threshold": 0.85,
+            "random_double_check_percentage": 15.0,
+            "fact_review_period_days": 90,
+            "require_evidence_before_approval": True,
+        },
+        server_default=text(
+            '\'{"confidence_threshold": 0.85, "random_double_check_percentage": 15.0, "fact_review_period_days": 90, "require_evidence_before_approval": true}\'::jsonb'
+        ),
+        doc="Configurable review rules: confidence_threshold, random_double_check_percentage, fact_review_period_days, require_evidence_before_approval."
+    )
 
     # Relationships
     users: Mapped[list[User]] = relationship(

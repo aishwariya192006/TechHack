@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.get("/logs", response_model=list[AuditLedgerRead])
 async def list_audit_logs(
-    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR, UserRole.REVIEWER]))],
+    current_user: Annotated[User, Depends(require_role([UserRole.ADMINISTRATOR]))],
     session: Annotated[AsyncSession, Depends(get_async_session)],
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),

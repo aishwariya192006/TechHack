@@ -54,19 +54,19 @@ export default function LoginPage() {
 
     // In Sign In mode, autofill demo accounts for convenience
     if (mode === 'signin') {
-      if (roleKey === 'SuperAdmin') {
+      if (roleKey === 'Administrator' || roleKey === 'SuperAdmin') {
         setFirstName('Sam');
         setLastName('Administrator');
         setEmail('admin@acme.com');
         setPassword('DemoSecure2026!');
         setPhoneNumber('(555) 019-2831');
-      } else if (roleKey === 'Auditor') {
+      } else if (roleKey === 'Reviewer' || roleKey === 'Auditor') {
         setFirstName('Auditor');
         setLastName('First');
         setEmail('reviewer@acme.com');
         setPassword('DemoSecure2026!');
         setPhoneNumber('(555) 234-5678');
-      } else if (roleKey === 'Test role') {
+      } else if (roleKey === 'Creator' || roleKey === 'Test role') {
         setFirstName('Alex');
         setLastName('Creator');
         setEmail('creator@acme.com');
@@ -100,9 +100,8 @@ export default function LoginPage() {
         await login(trimmedEmail, password);
       } else {
         const fullName = `${firstName.trim()} ${lastName.trim()}`.trim() || trimmedEmail.split('@')[0];
-        let roleEnum: 'CREATOR' | 'REVIEWER' | 'ADMINISTRATOR' = 'CREATOR';
-        if (selectedRole === 'SuperAdmin') roleEnum = 'ADMINISTRATOR';
-        else if (selectedRole === 'Auditor') roleEnum = 'REVIEWER';
+        // Public signup creates Creator accounts only. Reviewer and Administrator accounts are created by an administrator.
+        const roleEnum: 'CREATOR' | 'REVIEWER' | 'ADMINISTRATOR' = 'CREATOR';
 
         await signup({
           email: trimmedEmail,
@@ -246,7 +245,7 @@ export default function LoginPage() {
               Governance
             </button>
             <button type="button" className="signin-nav-item" onClick={() => navigate('/')}>
-              Enterprise
+              Solutions
             </button>
             <button
               type="button"
@@ -269,9 +268,9 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setError(null)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
             >
-              ✕
+              X
             </button>
           </div>
         )}
@@ -382,7 +381,7 @@ export default function LoginPage() {
             <div className="left-card-footer-note">
               {mode === 'signup' ? (
                 <>
-                  <span style={{ color: '#10b981', marginRight: 4, fontWeight: 700 }}>✓</span> Self-Serve Access · Sign up enabled
+                  <span style={{ color: '#10b981', marginRight: 4, fontWeight: 700 }}>•</span> Self-Serve Access · Sign up enabled
                 </>
               ) : (
                 <>
@@ -448,47 +447,60 @@ export default function LoginPage() {
 
             <h1 className="signin-main-heading">{mode === 'signup' ? 'Create Account' : 'Sign In'}</h1>
 
-            <div className="role-section-wrapper" ref={roleDropdownRef}>
-              <label className="role-eyebrow-label">ROLE</label>
-
-              {/* Role Dropdown Box */}
-              <div
-                className={`role-select-box ${isRoleDropdownOpen ? 'role-box-open' : ''}`}
-                onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
-              >
-                <span className="role-selected-text">{selectedRole}</span>
-                <span className="role-arrow">▼</span>
-              </div>
-
-              {/* Role Dropdown Menu (Open as shown in screenshot) */}
-              {isRoleDropdownOpen && (
-                <div className="role-dropdown-menu">
-                  <div
-                    className={`role-menu-item ${selectedRole === 'SuperAdmin' ? 'active' : ''}`}
-                    onClick={() => handleSelectRole('SuperAdmin')}
-                  >
-                    <span className="role-item-name">SuperAdmin</span>
-                    <span className="role-item-tag admin">ADMIN</span>
-                  </div>
-
-                  <div
-                    className={`role-menu-item ${selectedRole === 'Auditor' ? 'active' : ''}`}
-                    onClick={() => handleSelectRole('Auditor')}
-                  >
-                    <span className="role-item-name">Auditor</span>
-                    <span className="role-item-tag reviewer">REVIEWER</span>
-                  </div>
-
-                  <div
-                    className={`role-menu-item ${selectedRole === 'Test role' ? 'active' : ''}`}
-                    onClick={() => handleSelectRole('Test role')}
-                  >
-                    <span className="role-item-name">Test role</span>
-                    <span className="role-item-tag creator">CREATOR</span>
-                  </div>
+            {mode === 'signup' ? (
+              <div className="role-section-wrapper">
+                <label className="role-eyebrow-label">ROLE</label>
+                <div className="role-select-box" style={{ background: 'rgba(255, 255, 255, 0.85)', cursor: 'default' }}>
+                  <span className="role-selected-text">Creator</span>
+                  <span className="role-item-tag creator" style={{ marginLeft: 8 }}>CREATOR ONLY</span>
                 </div>
-              )}
-            </div>
+                <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
+                  Public sign up creates Creator accounts only. Reviewer and Administrator accounts are provisioned by an administrator.
+                </div>
+              </div>
+            ) : (
+              <div className="role-section-wrapper" ref={roleDropdownRef}>
+                <label className="role-eyebrow-label">ROLE</label>
+
+                {/* Role Dropdown Box */}
+                <div
+                  className={`role-select-box ${isRoleDropdownOpen ? 'role-box-open' : ''}`}
+                  onClick={() => setIsRoleDropdownOpen(!isRoleDropdownOpen)}
+                >
+                  <span className="role-selected-text">{selectedRole}</span>
+                  <span className="role-arrow">▼</span>
+                </div>
+
+                {/* Role Dropdown Menu */}
+                {isRoleDropdownOpen && (
+                  <div className="role-dropdown-menu">
+                    <div
+                      className={`role-menu-item ${selectedRole === 'Creator' || selectedRole === 'Test role' ? 'active' : ''}`}
+                      onClick={() => handleSelectRole('Creator')}
+                    >
+                      <span className="role-item-name">Creator</span>
+                      <span className="role-item-tag creator">CREATOR</span>
+                    </div>
+
+                    <div
+                      className={`role-menu-item ${selectedRole === 'Reviewer' || selectedRole === 'Auditor' ? 'active' : ''}`}
+                      onClick={() => handleSelectRole('Reviewer')}
+                    >
+                      <span className="role-item-name">Reviewer</span>
+                      <span className="role-item-tag reviewer">REVIEWER</span>
+                    </div>
+
+                    <div
+                      className={`role-menu-item ${selectedRole === 'Administrator' || selectedRole === 'SuperAdmin' ? 'active' : ''}`}
+                      onClick={() => handleSelectRole('Administrator')}
+                    >
+                      <span className="role-item-name">Administrator</span>
+                      <span className="role-item-tag admin">ADMIN</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Seamless Password Field (integrated fieldset) */}
             <fieldset className="legend-fieldset password-fieldset">
@@ -567,7 +579,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      {/* ── Contact Support Enterprise Modal ── */}
+      {/* ── Contact Support Workspace Modal ── */}
       {showSupportModal && (
         <div className="modal-overlay" onClick={() => setShowSupportModal(false)}>
           <div className="support-modal-card" onClick={(e) => e.stopPropagation()}>
@@ -575,7 +587,7 @@ export default function LoginPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 6, background: '#4f46e5', color: '#fff', fontSize: 12, fontWeight: 800 }}>BS</span>
                 <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0f172a' }}>
-                  Enterprise Access &amp; Support
+                  Workspace Access &amp; Support
                 </h3>
               </div>
               <button
@@ -583,7 +595,7 @@ export default function LoginPage() {
                 className="modal-close-btn"
                 onClick={() => setShowSupportModal(false)}
               >
-                ✕
+                X
               </button>
             </div>
             <div className="support-modal-body">

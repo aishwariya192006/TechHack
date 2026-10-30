@@ -7,7 +7,7 @@ Exposes endpoints for:
 4. Full revision lineage & side-by-side token diffs (GET /submissions/{id}/revisions/diff).
 """
 
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 import uuid
 
 from fastapi import APIRouter, Depends, Query, status
@@ -114,6 +114,31 @@ async def execute_human_review(
         reviewer=reviewer,
         payload=payload,
     )
+
+
+@router.post(
+    "/{submission_id}/assign-reviewer",
+    status_code=status.HTTP_200_OK,
+    summary="Assign Reviewer to Submission",
+)
+async def assign_submission_reviewer(
+    submission_id: uuid.UUID,
+    reviewer: AuthorizedReviewer,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    target_reviewer_id: Optional[uuid.UUID] = None,
+) -> dict[str, Any]:
+    """Assigns an authorized reviewer or allows an administrator to act as assigned reviewer."""
+    submission = await session.get(Submission, submission_id)
+    if not submission or submission.workspace_id != reviewer.workspace_id:
+        raise NotFoundProblem(
+            detail=f"Submission '{submission_id}' not found in workspace.",
+            resource_type="Submission",
+            resource_id=str(submission_id),
+        )
+    assigned_id = target_reviewer_id or reviewer.id
+    submission.assigned_reviewer_id = assigned_id
+    await session.commit()
+    return {"status": "assigned", "assigned_reviewer_id": str(assigned_id)}
 
 
 @router.get(

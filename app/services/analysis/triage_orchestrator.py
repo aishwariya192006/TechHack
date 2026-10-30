@@ -35,6 +35,7 @@ from app.infrastructure.db.models import (
     DocumentRevision,
     Finding,
     Submission,
+    Workspace,
 )
 from app.services.analysis.deterministic_engine import DeterministicRuleEngine
 from app.services.analysis.privacy_gate import PrivacyGateRouter
@@ -114,6 +115,14 @@ class TriageOrchestrator:
             )
             g_res = await session.execute(g_query)
             guidelines = list(g_res.scalars().all())
+
+        # Resolve Workspace Review Rules
+        ws = await session.get(Workspace, workspace_id)
+        ws_rules = getattr(ws, "review_rules", {}) or {}
+        conf_threshold = float(ws_rules.get("confidence_threshold", 0.85))
+        effective_sample_rate = audit_sample_rate
+        if audit_sample_rate == AUTOMATION_BIAS_SAMPLE_RATE and "random_double_check_percentage" in ws_rules:
+            effective_sample_rate = float(ws_rules["random_double_check_percentage"]) / 100.0
 
         # ----------------------------------------------------------------------
         # Stage 1 (L1 In-Memory Automaton) & Stage 2 (Temporal Fact Hybrid RAG)
@@ -218,7 +227,7 @@ class TriageOrchestrator:
 
             if not has_valid_link:
                 status = TriageStatus.NEEDS_VERIFICATION
-            elif tone.confidence_score >= 0.85:
+            elif tone.confidence_score >= conf_threshold:
                 status = TriageStatus.FLAGGED_HIGH_CONFIDENCE
             else:
                 status = TriageStatus.ROUTED_TO_HUMAN_LOW_CONFIDENCE
@@ -255,7 +264,7 @@ class TriageOrchestrator:
 
         rand_gen = rng or random
         for finding in high_conf_findings:
-            if rand_gen.random() < audit_sample_rate:
+            if rand_gen.random() < effective_sample_rate:
                 finding.is_automation_bias_audit = True
                 finding.explanation_reason = (
                     "[AUTOMATION-BIAS SAFEGUARD: Human verification of primary evidence citation mandatory before approval] "
@@ -365,6 +374,14 @@ class TriageOrchestrator:
             g_res = await session.execute(g_query)
             guidelines = list(g_res.scalars().all())
 
+        # Resolve Workspace Review Rules
+        ws = await session.get(Workspace, workspace_id)
+        ws_rules = getattr(ws, "review_rules", {}) or {}
+        conf_threshold = float(ws_rules.get("confidence_threshold", 0.85))
+        effective_sample_rate = audit_sample_rate
+        if audit_sample_rate == AUTOMATION_BIAS_SAMPLE_RATE and "random_double_check_percentage" in ws_rules:
+            effective_sample_rate = float(ws_rules["random_double_check_percentage"]) / 100.0
+
         # ----------------------------------------------------------------------
         # Stage 1: Deterministic Rule Engine (O(N) Aho-Corasick & Readability)
         # ----------------------------------------------------------------------
@@ -441,6 +458,13 @@ class TriageOrchestrator:
         raw_finding_records: list[Finding] = []
         now = datetime.now(timezone.utc)
 
+        ws_stream = await session.get(Workspace, workspace_id)
+        ws_rules_stream = getattr(ws_stream, "review_rules", {}) or {}
+        conf_threshold_stream = float(ws_rules_stream.get("confidence_threshold", 0.85))
+        effective_sample_rate_stream = audit_sample_rate
+        if audit_sample_rate == AUTOMATION_BIAS_SAMPLE_RATE and "random_double_check_percentage" in ws_rules_stream:
+            effective_sample_rate_stream = float(ws_rules_stream["random_double_check_percentage"]) / 100.0
+
         # 4A. Ingest Deterministic Hits
         for d in deterministic_hits:
             f = Finding(
@@ -500,7 +524,7 @@ class TriageOrchestrator:
                         linked_g_id = g.id
                         break
 
-            if tone.confidence_score >= 0.85 and linked_g_id:
+            if tone.confidence_score >= conf_threshold_stream and linked_g_id:
                 status = TriageStatus.FLAGGED_HIGH_CONFIDENCE
             else:
                 status = TriageStatus.ROUTED_TO_HUMAN_LOW_CONFIDENCE
@@ -528,11 +552,11 @@ class TriageOrchestrator:
 
         # 4D. 15% Stochastic Automation-Bias Safeguard
         audit_count = 0
-        if audit_sample_rate > 0.0:
+        if effective_sample_rate_stream > 0.0:
             for finding in raw_finding_records:
                 if (
                     finding.triage_status == TriageStatus.FLAGGED_HIGH_CONFIDENCE
-                    and random.random() < audit_sample_rate
+                    and random.random() < effective_sample_rate_stream
                 ):
                     finding.triage_status = TriageStatus.ROUTED_TO_HUMAN_LOW_CONFIDENCE
                     finding.is_automation_bias_audit = True

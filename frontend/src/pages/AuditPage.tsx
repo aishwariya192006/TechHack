@@ -129,7 +129,7 @@ export default function AuditPage() {
             Audit Ledger Access Restricted
           </h2>
           <div style={{ fontSize: 13, color: '#f59e0b', fontWeight: 600, marginBottom: 14 }}>
-            Enterprise Separation of Duties (SOC 2 / ISO 27001 Compliance)
+            Separation of Duties (SOC 2 / ISO 27001 Compliance)
           </div>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
             The immutable SHA-256 cryptographic audit ledger records system events, IP telemetry, and regulatory determinations. To maintain segregation of duties, content Creators are prohibited from inspecting or verifying audit blocks.

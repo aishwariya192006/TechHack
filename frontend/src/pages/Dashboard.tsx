@@ -55,7 +55,7 @@ export default function Dashboard() {
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1>Compliance &amp; Governance Overview</h1>
-          <p>Real-time enterprise brand governance metrics, cryptographic audit logs, and risk analysis</p>
+          <p>Real-time brand governance metrics, cryptographic audit logs, and risk analysis</p>
         </div>
         <button
           className="btn btn-secondary btn-sm"

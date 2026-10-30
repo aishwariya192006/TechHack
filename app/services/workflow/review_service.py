@@ -14,11 +14,11 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ConflictProblem, NotFoundProblem, ValidationErrorProblem
-from app.domain.enums import AuditAction, ReviewSignOff, WorkflowState
+from app.core.exceptions import ConflictProblem, ForbiddenProblem, NotFoundProblem, ValidationErrorProblem
+from app.domain.enums import AuditAction, CreatorAction, ReviewSignOff, TriageStatus, UserRole, WorkflowState
 from app.domain.schemas.submission import ReviewSubmissionRequest
 from app.domain.state_machine import SubmissionStateMachine
-from app.infrastructure.db.models import Finding, ReviewDecision, Submission, User
+from app.infrastructure.db.models import Finding, ReviewDecision, Submission, User, Workspace
 from app.services.audit_service import AuditService
 
 
@@ -65,6 +65,40 @@ class WorkflowReviewService:
                 conflicting_field="workflow_state",
                 conflicting_value="APPROVED",
             )
+
+        # Role & Governance Approval Restrictions
+        if payload.decision == ReviewSignOff.APPROVED:
+            # Invariant: A creator cannot approve their own submission
+            if submission.creator_id == reviewer.id or reviewer.role == UserRole.CREATOR:
+                raise ForbiddenProblem(
+                    detail="A creator cannot approve their own submission."
+                )
+
+            # Invariant: An admin cannot approve unless acting as an assigned reviewer
+            if reviewer.role == UserRole.ADMINISTRATOR:
+                if submission.assigned_reviewer_id != reviewer.id:
+                    raise ForbiddenProblem(
+                        detail="An administrator cannot approve a submission unless acting as an assigned reviewer."
+                    )
+
+            # Workspace Rule: Require evidence before approval
+            workspace = await session.get(Workspace, submission.workspace_id)
+            review_rules = getattr(workspace, "review_rules", {}) or {}
+            if review_rules.get("require_evidence_before_approval", True):
+                all_f_query = select(Finding).where(Finding.revision_id == submission.current_revision_id)
+                all_f_res = await session.execute(all_f_query)
+                unverified_evidence = [
+                    f for f in all_f_res.scalars().all()
+                    if (f.triage_status == TriageStatus.NEEDS_VERIFICATION or (not f.linked_guideline_id and not f.linked_fact_id))
+                    and f.creator_action == CreatorAction.PENDING
+                ]
+                if unverified_evidence:
+                    raise ValidationErrorProblem(
+                        detail=(
+                            f"Approval blocked: 'Require evidence before approval' policy is active and "
+                            f"{len(unverified_evidence)} finding(s) have unverified supporting evidence."
+                        )
+                    )
 
         # 2. Automation-Bias Safeguard Enforcement
         # Query all active findings on head revision flagged as stochastic audits

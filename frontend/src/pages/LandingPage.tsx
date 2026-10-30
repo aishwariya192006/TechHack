@@ -111,7 +111,7 @@ export default function LandingPage() {
             <div className="ref-nav-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, background: '#4f46e5', color: '#fff', fontWeight: 800, fontSize: 13 }}>BS</div>
             <div>
               <div className="ref-nav-title">BrandShield AI</div>
-              <div className="ref-nav-sub">ENTERPRISE CONTENT GOVERNANCE</div>
+              <div className="ref-nav-sub">CONTENT GOVERNANCE &amp; BRAND SAFETY</div>
             </div>
           </div>
 
@@ -351,7 +351,7 @@ export default function LandingPage() {
             </button>
           </div>
           <div style={{ marginTop: 24, fontSize: 13, color: '#334155', fontWeight: 500 }}>
-            Enterprise SSO &amp; RBAC Active · Creator, Reviewer &amp; Administrator Access
+            SSO &amp; RBAC Active · Creator, Reviewer &amp; Administrator Access
           </div>
         </div>
       </section>
@@ -363,11 +363,11 @@ export default function LandingPage() {
             <div className="ref-nav-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, background: '#4f46e5', color: '#fff', fontWeight: 800, fontSize: 13 }}>BS</div>
             <div>
               <div className="ref-nav-title">BrandShield AI</div>
-              <div className="ref-nav-sub">ENTERPRISE CONTENT GOVERNANCE</div>
+              <div className="ref-nav-sub">CONTENT GOVERNANCE &amp; BRAND SAFETY</div>
             </div>
           </div>
           <div style={{ color: '#334155', fontSize: 13, fontWeight: 500 }}>
-            © 2026 BrandShield AI. All rights reserved. Enterprise Brand Safety &amp; Audit Perimeter.
+            © 2026 BrandShield AI. All rights reserved. Brand Safety &amp; Audit Perimeter.
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
             <span style={{ color: '#475569', fontSize: 12, fontWeight: 600 }}>FTC Compliant</span>

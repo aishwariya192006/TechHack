@@ -20,7 +20,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function SubmissionsPage() {
-  const { role, activeBrandProfileId } = useAuth();
+  const { role, user, activeBrandProfileId } = useAuth();
   const [submissions, setSubmissions] = useState<SubmissionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -216,6 +216,26 @@ export default function SubmissionsPage() {
       await fetchSubmissions();
     } catch (err: any) {
       setActionMessage(`Workflow error: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const isCreatorOfSubmission = !!(user?.id && selectedSub && selectedSub.creator_id === user.id);
+  const isAdminUnassigned = role === 'ADMINISTRATOR' && !!(selectedSub && selectedSub.assigned_reviewer_id !== user?.id);
+
+  const handleAssignToMyself = async () => {
+    if (!selectedSub) return;
+    setActionLoading(true);
+    setActionMessage(null);
+    try {
+      await workflowApi.assignReviewer(selectedSub.id);
+      setActionMessage('Successfully assigned to yourself as reviewer.');
+      const updated = await submissionsApi.get(selectedSub.id);
+      setSelectedSub(updated);
+      await fetchSubmissions();
+    } catch (err: any) {
+      setActionMessage(`Assignment error: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -632,6 +652,29 @@ export default function SubmissionsPage() {
                   Human Reviewer Governance Sign-Off (Role-Enforced)
                 </div>
 
+                {/* Separation of duties rule: Creator cannot approve their own submission */}
+                {isCreatorOfSubmission && (
+                  <div style={{ marginBottom: 12, padding: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', borderRadius: 6, color: '#fca5a5', fontSize: 12 }}>
+                    A creator cannot approve their own submission. (Separation of duties enforced)
+                  </div>
+                )}
+
+                {/* Admin requirement: Admin cannot approve unless acting as assigned reviewer */}
+                {!isCreatorOfSubmission && isAdminUnassigned && (
+                  <div style={{ marginBottom: 12, padding: 10, background: 'rgba(59,130,246,0.1)', border: '1px solid #3b82f6', borderRadius: 6, color: '#93c5fd', fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <span>An administrator cannot approve unless acting as an assigned reviewer.</span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-secondary"
+                      onClick={handleAssignToMyself}
+                      disabled={actionLoading}
+                      style={{ background: '#3b82f6', color: '#fff', border: 'none' }}
+                    >
+                      Assign to myself to review
+                    </button>
+                  </div>
+                )}
+
                 {/* Automation-bias verification mandatory checklist */}
                 {findings.filter(f => f.is_automation_bias_audit).length > 0 && (
                   <div style={{ marginBottom: 12, padding: 10, background: 'rgba(245,158,11,0.08)', border: '1px solid #f59e0b', borderRadius: 6 }}>
@@ -665,9 +708,16 @@ export default function SubmissionsPage() {
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button
                     className="btn btn-sm"
-                    style={{ background: '#10b981', color: '#fff' }}
+                    style={{ background: '#10b981', color: '#fff', opacity: (isCreatorOfSubmission || isAdminUnassigned) ? 0.4 : 1 }}
                     onClick={() => handleReviewDecision('APPROVED')}
-                    disabled={actionLoading}
+                    disabled={actionLoading || isCreatorOfSubmission || isAdminUnassigned}
+                    title={
+                      isCreatorOfSubmission
+                        ? 'A creator cannot approve their own submission.'
+                        : isAdminUnassigned
+                        ? 'An administrator cannot approve unless acting as an assigned reviewer.'
+                        : 'Approve Submission'
+                    }
                   >
                     Approve Submission
                   </button>
@@ -675,7 +725,7 @@ export default function SubmissionsPage() {
                     className="btn btn-sm"
                     style={{ background: '#ef4444', color: '#fff' }}
                     onClick={() => handleReviewDecision('CHANGES_REQUESTED')}
-                    disabled={actionLoading}
+                    disabled={actionLoading || isCreatorOfSubmission}
                   >
                     Request Changes
                   </button>

@@ -370,6 +370,15 @@ class TemporalFactEngine:
                 facts = []
 
         now = datetime.now(timezone.utc)
+        review_period_days = 90
+        if session is not None:
+            try:
+                from app.infrastructure.db.models import Workspace
+                ws = await session.get(Workspace, workspace_id)
+                if ws and hasattr(ws, "review_rules") and isinstance(ws.review_rules, dict):
+                    review_period_days = int(ws.review_rules.get("fact_review_period_days", 90))
+            except Exception:
+                pass
 
         for claim in claims:
             best_fact: Optional[ApprovedFact] = None
@@ -389,7 +398,23 @@ class TemporalFactEngine:
                 # --------------------------------------------------------------
                 # Condition A: Expired Fact -> STALE_FACT_REVERIFY
                 # --------------------------------------------------------------
-                if best_fact.expiry_date < now:
+                is_expired = bool(getattr(best_fact, "expiry_date", None) and best_fact.expiry_date < now)
+                is_stale_window = False
+                fact_timestamp = getattr(best_fact, "updated_at", None) or getattr(best_fact, "created_at", None)
+                if isinstance(fact_timestamp, datetime):
+                    from datetime import timedelta
+                    if fact_timestamp + timedelta(days=review_period_days) < now:
+                        is_stale_window = True
+
+                if is_expired or is_stale_window:
+                    staleness_msg = (
+                        f"Temporal staleness alert: Factual assertion aligns with approved claim "
+                        f"'{best_fact.fact_statement[:80]}...', but substantiation expired on "
+                        f"{best_fact.expiry_date.strftime('%Y-%m-%d')}."
+                        if is_expired else
+                        f"Temporal staleness alert: Factual assertion aligns with approved claim "
+                        f"'{best_fact.fact_statement[:80]}...', but fact review period ({review_period_days} days) has elapsed."
+                    )
                     findings.append(
                         TemporalFactFinding(
                             issue_category=FindingCategory.STALE_FACT,
@@ -398,12 +423,7 @@ class TemporalFactEngine:
                             triage_status=TriageStatus.STALE_FACT_REVERIFY,
                             start_offset=claim.start_offset,
                             end_offset=claim.end_offset,
-                            explanation_reason=(
-                                f"Temporal staleness alert: Factual assertion aligns with approved claim "
-                                f"'{best_fact.fact_statement[:80]}...', but substantiation expired on "
-                                f"{best_fact.expiry_date.strftime('%Y-%m-%d')}. "
-                                f"Responsible Owner (User ID: {best_fact.responsible_owner_id}) must recertify."
-                            ),
+                            explanation_reason=f"{staleness_msg} Responsible Owner (User ID: {best_fact.responsible_owner_id}) must recertify.",
                             suggested_correction=f"Recertify fact substantiation via verified source: {best_fact.original_source_url}",
                             detector_source=DetectorSource.TEMPORAL_FACT_MATCHER,
                             linked_fact_id=best_fact.id,
@@ -411,6 +431,7 @@ class TemporalFactEngine:
                                 "expiry_date": best_fact.expiry_date.isoformat(),
                                 "responsible_owner_id": str(best_fact.responsible_owner_id),
                                 "source_url": best_fact.original_source_url,
+                                "review_period_days": review_period_days,
                             },
                         )
                     )
