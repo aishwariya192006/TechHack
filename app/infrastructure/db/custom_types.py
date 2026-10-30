@@ -52,17 +52,21 @@ class PortableVector(TypeDecorator):
 
     def load_dialect_impl(self, dialect: Dialect):
         if dialect.name == "postgresql":
+            import os
+            if os.getenv("ENABLE_PGVECTOR", "false").lower() not in ("true", "1", "yes"):
+                return dialect.type_descriptor(JSONB())
             try:
                 from pgvector.sqlalchemy import Vector
                 return dialect.type_descriptor(Vector(self.dim))
-            except ImportError:
-                return dialect.type_descriptor(JSON())
+            except (ImportError, Exception):
+                return dialect.type_descriptor(JSONB())
         return dialect.type_descriptor(JSON())
 
     def process_bind_param(self, value: Any, dialect: Dialect) -> Any:
         if value is None:
             return None
-        if dialect.name == "postgresql":
+        import os
+        if dialect.name == "postgresql" and os.getenv("ENABLE_PGVECTOR", "false").lower() in ("true", "1", "yes"):
             return value
         if isinstance(value, str):
             try:
@@ -74,6 +78,8 @@ class PortableVector(TypeDecorator):
     def process_result_value(self, value: Any, dialect: Dialect) -> Any:
         if value is None:
             return None
+        if isinstance(value, list):
+            return value
         if isinstance(value, str):
             try:
                 return json.loads(value)

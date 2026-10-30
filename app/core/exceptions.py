@@ -131,7 +131,7 @@ class StateMachineConflictProblem(ProblemDetailException):
 
 
 class PrivacyGateBlockProblem(ProblemDetailException):
-    """RFC 7807 403 Zero-Trust Privacy Gate Egress Block."""
+    """RFC 7807 403 Privacy Gate Egress Block."""
 
     def __init__(
         self,

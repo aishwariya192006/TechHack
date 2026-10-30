@@ -85,14 +85,27 @@ async def init_db_extensions(engine: AsyncEngine | None = None) -> None:
     and 'uuid-ossp' for native UUID generation).
     """
     target_engine = engine or async_engine
+    if target_engine.dialect.name != "postgresql":
+        logger.info("Dialect '%s' detected; skipping PostgreSQL extension registration.", target_engine.dialect.name)
+        return
+
     logger.info("Verifying PostgreSQL extensions (vector, pg_trgm, uuid-ossp)...")
 
     async with target_engine.begin() as conn:
-        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'))
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
-        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+        try:
+            await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'))
+        except Exception as exc:
+            logger.warning("Could not create 'uuid-ossp' extension: %s", exc)
+        try:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+        except Exception as exc:
+            logger.warning("Could not create 'vector' extension (falling back to JSON storage): %s", exc)
+        try:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
+        except Exception as exc:
+            logger.warning("Could not create 'pg_trgm' extension: %s", exc)
 
-    logger.info("PostgreSQL extensions initialized successfully.")
+    logger.info("PostgreSQL extension check completed.")
 
 
 async def init_db_tables(engine: AsyncEngine | None = None) -> None:
@@ -129,17 +142,18 @@ async def init_db_tables(engine: AsyncEngine | None = None) -> None:
 
     async with target_engine.begin() as conn:
         # Register PostgreSQL enum types idempotently if running on Postgres
-        for type_name, enum_cls in enum_definitions:
-            values = ", ".join(f"'{e.value}'" for e in enum_cls)
-            await conn.execute(
-                text(f"""
-                DO $$ BEGIN
-                    CREATE TYPE {type_name} AS ENUM ({values});
-                EXCEPTION
-                    WHEN duplicate_object THEN null;
-                END $$;
-                """)
-            )
+        if conn.dialect.name == "postgresql":
+            for type_name, enum_cls in enum_definitions:
+                values = ", ".join(f"'{e.value}'" for e in enum_cls)
+                await conn.execute(
+                    text(f"""
+                    DO $$ BEGIN
+                        CREATE TYPE {type_name} AS ENUM ({values});
+                    EXCEPTION
+                        WHEN duplicate_object THEN null;
+                    END $$;
+                    """)
+                )
 
         # Create all tables declared in Base metadata
         await conn.run_sync(Base.metadata.create_all)

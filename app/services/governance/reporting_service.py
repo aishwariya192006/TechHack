@@ -43,7 +43,7 @@ class GovernanceReportService:
             JOIN document_revisions dr ON f.revision_id = dr.id
             JOIN submissions s ON dr.submission_id = s.id
             WHERE s.workspace_id = :workspace_id
-              AND (:brand_profile_id IS NULL OR s.brand_profile_id = :brand_profile_id)
+              AND (CAST(:brand_profile_id AS UUID) IS NULL OR s.brand_profile_id = CAST(:brand_profile_id AS UUID))
         )
         SELECT 
             'CUBE' AS metric_type,
@@ -113,7 +113,7 @@ class GovernanceReportService:
         FROM review_decisions rd
         JOIN submissions s ON rd.submission_id = s.id
         WHERE s.workspace_id = :workspace_id
-          AND (:brand_profile_id IS NULL OR s.brand_profile_id = :brand_profile_id)
+          AND (CAST(:brand_profile_id AS UUID) IS NULL OR s.brand_profile_id = CAST(:brand_profile_id AS UUID))
         GROUP BY DATE_TRUNC('day', rd.decided_at), rd.decision
     """)
 

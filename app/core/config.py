@@ -76,7 +76,7 @@ class Settings(BaseSettings):
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ]
-    CORS_ALLOW_ORIGIN_REGEX: str = r"^https://.*\.vercel\.app$"
+    CORS_ALLOW_ORIGIN_REGEX: str = r"^https://(.*\.vercel\.app|.*\.onrender\.com)$"
 
     # Redis Cache & Token Bucket Rate Limiting
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -88,11 +88,21 @@ class Settings(BaseSettings):
     VECTOR_SIMILARITY_THRESHOLD: float = 0.82
 
     # Privacy Gate & Safeguards
-    STOCHASTIC_AUDIT_PROBABILITY: float = Field(
-        default=0.05,
+    AUTOMATION_BIAS_SAMPLE_RATE: float = Field(
+        default=0.15,
         ge=0.0,
         le=1.0,
-        description="Pseudo-random sampling fraction (5%) to inject shadow audits and combat human automation bias"
+        description="Sampling rate (default 15%) to inject shadow audits and combat human automation bias"
+    )
+    STOCHASTIC_AUDIT_PROBABILITY: float = Field(
+        default=0.15,
+        ge=0.0,
+        le=1.0,
+        description="Pseudo-random sampling fraction (15%) to inject shadow audits and combat human automation bias"
+    )
+    DEMO_MODE: bool = Field(
+        default=True,
+        description="When true, enables high-reliability instant demo mode with verified fallback examples"
     )
     CIRCUIT_BREAKER_FAILURE_THRESHOLD: int = 5
     CIRCUIT_BREAKER_RECOVERY_TIME: int = 30  # seconds

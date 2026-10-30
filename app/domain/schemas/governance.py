@@ -78,7 +78,7 @@ class GovernanceReportResponse(BaseModel):
 
 class TraceabilityMetricsResponse(BaseModel):
     """
-    Zero-hallucination and evidence traceability compliance verification audit.
+    Evidence-linked and evidence traceability compliance verification audit.
     Proves that every violation claim is grounded in a verified guideline or fact.
     """
     workspace_id: uuid.UUID

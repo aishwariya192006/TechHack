@@ -43,7 +43,7 @@
 |               CONFIDENCE TRIAGE & AUTOMATION-BIAS SAFEGUARD ENGINE                |
 |  * High Confidence -> Flagged + Source Link                                       |
 |  * Low/Ambiguous -> Routed to Human Queue                                         |
-|  * Missing Evidence -> Marked "Needs Verification" (Zero Hallucination Guarantee) |
+|  * Missing Evidence -> Marked "Needs Verification" (Evidence-Linked Rule)         |
 |  * Stochastic Audit -> Injects Random Double-Check Flags for Reviewers            |
 +-----------------------------------------+-----------------------------------------+
                                           |
@@ -106,7 +106,7 @@ flowchart TD
         LLM --> DEC
         DEC -- "Confidence >= 0.90" --> HC[Flagged + Grounded Source Links]
         DEC -- "0.60 <= Conf < 0.90" --> LQ[Human Reviewer Queue]
-        DEC -- "Missing Ground Truth" --> NV[Marked: Needs Verification\nZero Hallucination Rule]
+        DEC -- "Missing Ground Truth" --> NV[Marked: Needs Verification\nEvidence-Linked Rule]
         DEC -- "Stochastic Sample (5%)" --> SA[Injected Double-Check Audit\nAnti-Automation Bias]
     end
 
@@ -133,10 +133,10 @@ flowchart TD
 ## 3. Core Architectural Principles & Invariants
 
 1. **Defense-in-Depth Execution Order:** Fast-path deterministic O(N) evaluation runs first to immediately catch 70–80% of prohibited brand terms and standard compliance violations in `< 2ms`, completely eliminating costly LLM calls for known errors.
-2. **Zero-Hallucination Grounding:** An objective claim is *never* marked compliant without an unexpired, verified ground-truth record. If verification fails or is absent, the system defaults to `Needs Verification` rather than assuming safety.
+2. **Evidence-Linked Grounding:** An objective claim is *never* marked compliant without an unexpired, verified ground-truth record. If verification fails or is absent, the system defaults to `Needs Verification` rather than assuming safety.
 3. **Anti-Automation-Bias Safeguard:** To prevent human reviewers from becoming complacent and blindly approving green checks, a stochastic audit mechanism injects shadow review challenges into the human queue.
-4. **Cryptographic Auditability:** Every diff, rule evaluation, and review decision is hashed into an immutable Merkle/SHA-256 revision chain stored in PostgreSQL, providing zero-repudiation audit trails for regulatory compliance (FTC, FDA, GDPR, FINRA).
-5. **Zero-Trust Data Boundary:** No raw user payload reaches external inference endpoints without traversing tenant tenancy checks and reversible PII/PHI redaction.
+4. **Cryptographic Auditability:** Every diff, rule evaluation, and review decision is hashed into an immutable Merkle/SHA-256 revision chain stored in PostgreSQL, providing tamper-evident audit trails for regulatory compliance (FTC, FDA, GDPR, FINRA).
+5. **Strict Data Boundary:** No raw user payload reaches external inference endpoints without traversing tenant tenancy checks and reversible PII/PHI redaction.
 
 ---
 

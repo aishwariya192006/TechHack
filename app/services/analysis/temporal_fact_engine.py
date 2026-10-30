@@ -5,7 +5,7 @@ queries approved_facts via Reciprocal Rank Fusion (RRF: pgvector + ts_rank_cd),
 and enforces strict Temporal Fact Governance:
 - Expired facts -> STALE_FACT_REVERIFY
 - Numerical / factual contradictions -> FLAGGED_HIGH_CONFIDENCE
-- Ungrounded claims without approved facts -> NEEDS_VERIFICATION_MISSING_EVIDENCE (zero-hallucination)
+- Ungrounded claims without approved facts -> NEEDS_VERIFICATION_MISSING_EVIDENCE (evidence-linked)
 """
 
 from dataclasses import dataclass, field
@@ -449,7 +449,7 @@ class TemporalFactEngine:
             else:
                 # --------------------------------------------------------------
                 # Condition C: Factual Claim with NO Approved Grounding Fact
-                # Zero-Hallucination Safe Harbor: NEVER claim confirmed breach!
+                # Evidence-Linked Safe Harbor: NEVER claim confirmed breach!
                 # --------------------------------------------------------------
                 findings.append(
                     TemporalFactFinding(

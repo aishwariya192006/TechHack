@@ -36,6 +36,8 @@ class AuditChainVerificationResult(BaseModel):
     total_records: int
     tampered_sequence_id: Optional[int] = None
     verification_message: str
+    has_historical_break: bool = False
+    historical_break_notes: Optional[str] = None
 
     @property
     def chain_valid(self) -> bool:

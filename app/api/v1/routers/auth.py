@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.exceptions import ConflictProblem, NotFoundProblem, UnauthorizedProblem
 from app.core.security import (
+    RequireRole,
     create_access_token,
     create_refresh_token,
     decode_jwt_token,
@@ -22,7 +23,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.domain.enums import AuditAction
+from app.domain.enums import AuditAction, UserRole
 from app.domain.schemas.user import (
     LoginRequest,
     RefreshTokenRequest,
@@ -38,13 +39,21 @@ router = APIRouter()
 settings = get_settings()
 
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Provision a new tenant user (Admin Only)",
+    description="Secure user provisioning restricted to authenticated Administrators. Public registration is disabled.",
+)
 async def register_user(
     payload: UserRegisterRequest,
     session: Annotated[AsyncSession, Depends(get_async_session)],
+    current_admin: Annotated[User, Depends(RequireRole(UserRole.ADMINISTRATOR))],
 ) -> User:
     """
-    Registers a new tenant actor with Argon2id password hashing and audit chain commitment.
+    Provisions a new tenant actor with Argon2id password hashing and audit chain commitment.
+    Strictly restricted to authorized administrators.
     """
     # Resolve or provision tenant workspace
     workspace: Workspace | None = None
@@ -115,6 +124,101 @@ async def register_user(
     await session.commit()
     await session.refresh(new_user)
     return new_user
+
+
+@router.post(
+    "/signup",
+    response_model=TokenResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Public User Self-Registration & Sign Up",
+    description="Registers a new user, assigns them to an enterprise workspace, and returns access tokens for immediate session launch.",
+)
+async def signup_user(
+    payload: UserRegisterRequest,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+) -> TokenResponse:
+    """
+    Self-serve registration for new users. Creates an account with Argon2id password hashing,
+    emits audit ledger events, and returns signed JWT tokens for immediate authentication.
+    """
+    # 1. Resolve workspace (default to first active workspace or provision one)
+    workspace: Workspace | None = None
+    if payload.workspace_id:
+        workspace = await session.get(Workspace, payload.workspace_id)
+    if not workspace:
+        # Pick default seeded workspace
+        ws_res = await session.execute(select(Workspace).limit(1))
+        workspace = ws_res.scalar_one_or_none()
+    if not workspace:
+        ws_slug = f"ws-{uuid.uuid4().hex[:8]}"
+        workspace = Workspace(name="Default Workspace", slug=ws_slug)
+        session.add(workspace)
+        await session.flush()
+        await AuditService.record_event(
+            session=session,
+            action=AuditAction.WORKSPACE_CREATED,
+            workspace_id=workspace.id,
+            payload={"workspace_id": str(workspace.id), "slug": ws_slug, "name": "Default Workspace"},
+        )
+
+    # 2. Check if user already exists
+    existing_user_query = select(User).where(User.email == payload.email)
+    existing_res = await session.execute(existing_user_query)
+    if existing_res.scalar_one_or_none():
+        raise ConflictProblem(
+            detail=f"An account with email '{payload.email}' already exists. Please sign in instead.",
+        )
+
+    # 3. Hash password & create user
+    hashed_pwd = hash_password(payload.password)
+    new_user = User(
+        workspace_id=workspace.id,
+        email=payload.email,
+        hashed_password=hashed_pwd,
+        full_name=payload.full_name,
+        role=payload.role or UserRole.CREATOR,
+        is_active=True,
+    )
+    session.add(new_user)
+    await session.flush()
+
+    # 4. Record audit event
+    await AuditService.record_event(
+        session=session,
+        action=AuditAction.USER_REGISTERED,
+        workspace_id=workspace.id,
+        actor_id=new_user.id,
+        payload={
+            "user_id": str(new_user.id),
+            "email": new_user.email,
+            "role": new_user.role.value if hasattr(new_user.role, "value") else str(new_user.role),
+            "method": "self_service_signup",
+        },
+    )
+
+    # 5. Issue JWT tokens
+    access_token = create_access_token(
+        user_id=new_user.id,
+        email=new_user.email,
+        role=new_user.role,
+        workspace_id=new_user.workspace_id,
+    )
+    refresh_token = create_refresh_token(
+        user_id=new_user.id,
+        email=new_user.email,
+        role=new_user.role,
+        workspace_id=new_user.workspace_id,
+    )
+
+    await session.commit()
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserRead.model_validate(new_user),
+    )
 
 
 @router.post("/login", response_model=TokenResponse)

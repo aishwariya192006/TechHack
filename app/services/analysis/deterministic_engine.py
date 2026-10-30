@@ -234,14 +234,38 @@ class BrandAutomatonCache:
 
         pref_map = brand_profile.preferred_terminology_map if isinstance(getattr(brand_profile, "preferred_terminology_map", None), dict) else {}
         for deprecated, approved in pref_map.items():
+            if isinstance(approved, dict):
+                clean_term = (
+                    approved.get("approved_term")
+                    or approved.get("suggested_correction")
+                    or approved.get("term")
+                    or approved.get("preferred")
+                )
+                suggested = str(clean_term) if clean_term is not None else None
+                reason = approved.get("reason") or f"Deprecated term '{deprecated}'. Corporate standard is '{suggested or deprecated}'."
+                sev_str = approved.get("violation_severity", approved.get("severity", "MEDIUM"))
+                severity = SeverityLevel(sev_str) if sev_str in SeverityLevel._value2member_map_ else SeverityLevel.MEDIUM
+            elif isinstance(approved, list) and approved:
+                suggested = ", ".join(str(x) for x in approved)
+                reason = f"Deprecated term '{deprecated}'. Corporate standard is '{suggested}'."
+                severity = SeverityLevel.MEDIUM
+            elif approved is not None:
+                suggested = str(approved)
+                reason = f"Deprecated term '{deprecated}'. Corporate standard is '{suggested}'."
+                severity = SeverityLevel.MEDIUM
+            else:
+                suggested = None
+                reason = f"Deprecated term: '{deprecated}'."
+                severity = SeverityLevel.MEDIUM
+
             ci_automaton.add_pattern(
                 pattern=deprecated,
                 payload=PatternPayload(
                     term=deprecated,
-                    suggested_correction=approved,
-                    reason=f"Deprecated term '{deprecated}'. Corporate standard is '{approved}'.",
+                    suggested_correction=suggested,
+                    reason=reason,
                     category=FindingCategory.TERMINOLOGY,
-                    severity=SeverityLevel.MEDIUM,
+                    severity=severity,
                     match_type="PREFERRED",
                 ),
             )
@@ -320,7 +344,7 @@ class DeterministicRuleEngine:
     """
     Stage 1 Engine:
     Executes O(N) multi-pattern dictionary checks and algorithmic accessibility rules.
-    Guarantees 100% deterministic, zero-hallucination compliance enforcement.
+    Provides deterministic, evidence-linked compliance enforcement.
     """
 
     @classmethod

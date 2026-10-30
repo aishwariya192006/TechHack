@@ -20,7 +20,7 @@ class AnalysisPipelineRunRequest(BaseModel):
     )
     requested_provider: str = Field(
         default="Azure OpenAI",
-        description="Requested LLM provider for tone evaluation (subject to zero-trust privacy gate)"
+        description="Requested LLM provider for tone evaluation (subject to privacy-gated boundary)"
     )
     audit_sample_rate: Optional[float] = Field(
         default=None,
@@ -65,6 +65,10 @@ class AdHocFinding(BaseModel):
     suggested_correction: Optional[str] = None
     detector_source: str
     is_automation_bias_audit: bool = False
+    linked_guideline_id: Optional[uuid.UUID] = None
+    linked_fact_id: Optional[uuid.UUID] = None
+    evidence_source: Optional[str] = None
+    evidence_link: Optional[str] = None
 
 
 class AdHocAnalysisResponse(BaseModel):
@@ -81,7 +85,7 @@ class AnalysisEngineStatusResponse(BaseModel):
     stages: list[str] = [
         "Stage 1: Deterministic Rule Engine (Aho-Corasick & AST)",
         "Stage 2: Temporal Fact & Hybrid RAG Retrieval Engine",
-        "Stage 3: Zero-Trust Privacy Gate & Circuit-Breaker LLM Router",
+        "Stage 3: Privacy-Gated Boundary & Circuit-Breaker LLM Router",
         "Stage 4: Confidence Triage & Automation-Bias Safeguard",
     ]
     circuit_breaker_state: str

@@ -86,7 +86,7 @@ class ParsedDocument:
 class OffsetPreservingASTParser:
     """
     High-precision AST tokenizer converting multi-format assets into an offset-preserved
-    span graph suitable for regulatory finding citation and zero-hallucination verification.
+    span graph suitable for regulatory finding citation and evidence-linked verification.
     """
 
     @classmethod

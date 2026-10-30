@@ -5,7 +5,7 @@ BrandShield AI - Pydantic v2 Domain Schemas for Submissions, Revisions, and Revi
 import uuid
 from datetime import datetime
 from typing import Any, Optional
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.domain.enums import CreatorAction, ReviewSignOff, WorkflowState
 
@@ -100,6 +100,16 @@ class FindingResolutionRequest(BaseModel):
     comment: Optional[str] = Field(None, description="Optional rationale or justification from author")
     expected_version: Optional[int] = Field(None, description="Expected submission version_number for optimistic concurrency control")
 
+    @model_validator(mode="before")
+    @classmethod
+    def populate_aliases(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "custom_replacement" in data and not data.get("edited_text"):
+                data["edited_text"] = data["custom_replacement"]
+            if "rationale" in data and not data.get("comment"):
+                data["comment"] = data["rationale"]
+        return data
+
     @field_validator("action", mode="before")
     @classmethod
     def normalize_action(cls, v: Any) -> Any:
@@ -107,10 +117,13 @@ class FindingResolutionRequest(BaseModel):
             mapping = {
                 "ACCEPT": CreatorAction.ACCEPTED,
                 "ACCEPTED": CreatorAction.ACCEPTED,
+                "ACCEPT_SUGGESTION": CreatorAction.ACCEPTED,
                 "REJECT": CreatorAction.REJECTED,
                 "REJECTED": CreatorAction.REJECTED,
+                "REJECT_WITH_RATIONALE": CreatorAction.REJECTED,
                 "EDIT": CreatorAction.EDITED,
                 "EDITED": CreatorAction.EDITED,
+                "CUSTOM_EDIT": CreatorAction.EDITED,
             }
             v_upper = v.upper()
             if v_upper in mapping:

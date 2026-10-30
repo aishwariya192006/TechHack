@@ -5,6 +5,7 @@ Production-Grade Asynchronous PostgreSQL Schema with pgvector and strict constra
 
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import datetime
 from typing import Any, Optional
@@ -413,13 +414,19 @@ class BrandGuideline(Base, UUIDPrimaryKeyMixin, TimestampMixin):
             "category",
             "severity",
         ),
-        # HNSW Vector Index for dense cosine similarity
-        Index(
-            "ix_brand_guidelines_embedding_hnsw",
-            "embedding",
-            postgresql_using="hnsw",
-            postgresql_with={"m": 16, "ef_construction": 64},
-            postgresql_ops={"embedding": "vector_cosine_ops"},
+        # HNSW Vector Index for dense cosine similarity (only if pgvector is enabled)
+        *(
+            [
+                Index(
+                    "ix_brand_guidelines_embedding_hnsw",
+                    "embedding",
+                    postgresql_using="hnsw",
+                    postgresql_with={"m": 16, "ef_construction": 64},
+                    postgresql_ops={"embedding": "vector_cosine_ops"},
+                )
+            ]
+            if os.getenv("ENABLE_PGVECTOR", "false").lower() in ("true", "1", "yes")
+            else []
         ),
         # GIN Full-Text Index for sparse keyword search
         Index(
@@ -445,7 +452,7 @@ class BrandGuideline(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 class ApprovedFact(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """
     Substantiated ground-truth repository carrying strict verification windows.
-    Zero-hallucination safeguard rejects ungrounded or expired marketing statements.
+    Evidence-linked safeguard rejects ungrounded or expired marketing statements.
     """
     __tablename__ = "approved_facts"
 
@@ -526,13 +533,19 @@ class ApprovedFact(Base, UUIDPrimaryKeyMixin, TimestampMixin):
             "expiry_date",
             "is_active",
         ),
-        # HNSW index for sub-10ms semantic fact lookup
-        Index(
-            "ix_approved_facts_embedding_hnsw",
-            "embedding",
-            postgresql_using="hnsw",
-            postgresql_with={"m": 16, "ef_construction": 64},
-            postgresql_ops={"embedding": "vector_cosine_ops"},
+        # HNSW index for sub-10ms semantic fact lookup (only if pgvector is enabled)
+        *(
+            [
+                Index(
+                    "ix_approved_facts_embedding_hnsw",
+                    "embedding",
+                    postgresql_using="hnsw",
+                    postgresql_with={"m": 16, "ef_construction": 64},
+                    postgresql_ops={"embedding": "vector_cosine_ops"},
+                )
+            ]
+            if os.getenv("ENABLE_PGVECTOR", "false").lower() in ("true", "1", "yes")
+            else []
         ),
     )
 

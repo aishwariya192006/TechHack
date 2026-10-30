@@ -10,7 +10,7 @@ Exposes endpoints to:
 
 from datetime import datetime, timezone
 import time
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 import uuid
 
 from fastapi import APIRouter, Depends, Query, status
@@ -30,6 +30,7 @@ from app.domain.schemas.analysis import (
 )
 from app.domain.schemas.finding import FindingRead
 from app.infrastructure.db.models import (
+    BrandGuideline,
     BrandProfile,
     DocumentRevision,
     Finding,
@@ -68,7 +69,7 @@ async def run_analysis_pipeline(
     Executes the 4-stage intelligence pipeline on an immutable document revision:
     1. Deterministic Rule Engine (O(N) Aho-Corasick, Readability, Passive Voice, Caps Abuse).
     2. Temporal Fact & Hybrid RAG Retrieval Engine (RRF, Staleness, Missing Evidence).
-    3. Zero-Trust Privacy Gate & Circuit-Breaker LLM Router (PII Scrubber, Cache).
+    3. Privacy Gate & Circuit-Breaker LLM Router (PII Scrubber, Cache).
     4. Calibrated Confidence Triage & 15% Stochastic Automation-Bias Safeguard.
     """
     # 1. Resolve Revision & Submission
@@ -198,10 +199,19 @@ async def analyze_live_text(
             resource_id=str(payload.brand_profile_id),
         )
 
+    # 0. Query active guidelines to link findings to primary evidence sources
+    guidelines_query = select(BrandGuideline).where(
+        BrandGuideline.brand_profile_id == profile.id,
+        BrandGuideline.is_active == True,  # noqa: E712
+    )
+    g_res = await session.execute(guidelines_query)
+    guidelines = list(g_res.scalars().all())
+
     # 1. Deterministic Rule Hits
     deterministic_hits = DeterministicRuleEngine.analyze_document(
         content_text=payload.content_text,
         brand_profile=profile,
+        guidelines=guidelines,
     )
 
     # 2. Temporal Fact Verification
@@ -222,45 +232,84 @@ async def analyze_live_text(
 
     findings: list[AdHocFinding] = []
 
+    def _clean_suggestion(val: Any) -> Optional[str]:
+        if isinstance(val, dict):
+            return str(val.get("approved_term") or val.get("suggested_correction") or val.get("term") or val)
+        if isinstance(val, list):
+            return ", ".join(str(x) for x in val)
+        return str(val) if val is not None else None
+
     for d in deterministic_hits:
+        has_guideline = getattr(d, "linked_guideline_id", None) is not None
+        status = TriageStatus.FLAGGED_HIGH_CONFIDENCE if has_guideline else TriageStatus.NEEDS_VERIFICATION
+        ev_source = (
+            getattr(d, "metadata", {}).get("rule_id")
+            if getattr(d, "metadata", None)
+            else f"Brand Guideline ({d.issue_category.value})"
+        ) if has_guideline else "Unsubstantiated rule (Needs verification)"
+        ev_link = f"/guidelines#{d.linked_guideline_id}" if has_guideline else None
+
         findings.append(
             AdHocFinding(
                 issue_category=d.issue_category,
                 severity=d.severity,
                 confidence_score=1.0,
-                triage_status=TriageStatus.FLAGGED_HIGH_CONFIDENCE,
+                triage_status=status,
                 start_offset=d.start_offset,
                 end_offset=d.end_offset,
                 explanation_reason=d.explanation_reason,
-                suggested_correction=d.suggested_correction,
+                suggested_correction=_clean_suggestion(d.suggested_correction),
                 detector_source=d.detector_source.value if hasattr(d.detector_source, "value") else str(d.detector_source),
                 is_automation_bias_audit=False,
+                linked_guideline_id=getattr(d, "linked_guideline_id", None),
+                linked_fact_id=None,
+                evidence_source=ev_source,
+                evidence_link=ev_link,
             )
         )
 
     for t in temporal_hits:
+        t_meta = getattr(t, "metadata", {}) or {}
+        has_fact = getattr(t, "linked_fact_id", None) is not None
+        status = t.triage_status
+        if not has_fact or status == TriageStatus.NEEDS_VERIFICATION_MISSING_EVIDENCE:
+            status = TriageStatus.NEEDS_VERIFICATION
+
+        ev_source = t_meta.get("original_source_url") or t_meta.get("source_url") or ("Approved Corporate Fact" if has_fact else "Unverified assertion")
+        ev_link = t_meta.get("original_source_url") or t_meta.get("source_url")
+
         findings.append(
             AdHocFinding(
                 issue_category=t.issue_category,
                 severity=t.severity,
                 confidence_score=t.confidence_score,
-                triage_status=t.triage_status,
+                triage_status=status,
                 start_offset=t.start_offset,
                 end_offset=t.end_offset,
                 explanation_reason=t.explanation_reason,
-                suggested_correction=t.suggested_correction,
+                suggested_correction=_clean_suggestion(t.suggested_correction),
                 detector_source=t.detector_source.value if hasattr(t.detector_source, "value") else str(t.detector_source),
                 is_automation_bias_audit=False,
+                linked_guideline_id=None,
+                linked_fact_id=getattr(t, "linked_fact_id", None),
+                evidence_source=ev_source,
+                evidence_link=ev_link,
             )
         )
 
     for tone in tone_hits:
         if tone.confidence_score >= 0.40:
-            status_val = (
-                TriageStatus.FLAGGED_HIGH_CONFIDENCE
-                if tone.confidence_score >= 0.85
-                else TriageStatus.ROUTED_TO_HUMAN_LOW_CONFIDENCE
-            )
+            has_link = bool(getattr(tone, "linked_guideline_id", None) or getattr(tone, "linked_fact_id", None))
+            if not has_link:
+                status_val = TriageStatus.NEEDS_VERIFICATION
+            elif tone.confidence_score >= 0.85:
+                status_val = TriageStatus.FLAGGED_HIGH_CONFIDENCE
+            else:
+                status_val = TriageStatus.ROUTED_TO_HUMAN_LOW_CONFIDENCE
+
+            ev_source = f"Brand Voice Guideline ({profile.name})" if has_link else "Unverified Tone Pattern"
+            ev_link = f"/guidelines#{tone.linked_guideline_id}" if getattr(tone, "linked_guideline_id", None) else ("/guidelines" if has_link else None)
+
             findings.append(
                 AdHocFinding(
                     issue_category=tone.issue_category,
@@ -273,6 +322,10 @@ async def analyze_live_text(
                     suggested_correction=tone.suggested_correction,
                     detector_source=tone.detector_source.value if hasattr(tone.detector_source, "value") else str(tone.detector_source),
                     is_automation_bias_audit=False,
+                    linked_guideline_id=getattr(tone, "linked_guideline_id", None),
+                    linked_fact_id=getattr(tone, "linked_fact_id", None),
+                    evidence_source=ev_source,
+                    evidence_link=ev_link,
                 )
             )
 
@@ -349,7 +402,7 @@ async def get_analysis_engine_status(
     Inspects operational health of the analysis pipeline:
     - Circuit breaker state for external LLM inference.
     - Demo fallback cache pre-warmed entries count.
-    - Supported Zero-Trust inference providers.
+    - Supported privacy-gated inference providers.
     """
     cb_available = PrivacyGateRouter.circuit_breaker.is_available()
     cb_state = PrivacyGateRouter.circuit_breaker.state

@@ -139,3 +139,31 @@ async def get_revision_lineage_and_diff(
         from_revision=from_revision,
         to_revision=to_revision,
     )
+
+
+@router.get(
+    "/{submission_id}/reviews",
+    response_model=list[ReviewDecisionRead],
+    status_code=status.HTTP_200_OK,
+    summary="List Review Decisions for Submission",
+)
+async def list_submission_reviews(
+    submission_id: uuid.UUID,
+    current_user: AuthenticatedUser,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+) -> list[ReviewDecision]:
+    """Retrieves all human review decisions, comments, and reviewer determinations for a submission."""
+    submission = await session.get(Submission, submission_id)
+    if not submission or submission.workspace_id != current_user.workspace_id:
+        raise NotFoundProblem(
+            detail=f"Submission '{submission_id}' not found in workspace.",
+            resource_type="Submission",
+            resource_id=str(submission_id),
+        )
+    query = (
+        select(ReviewDecision)
+        .where(ReviewDecision.submission_id == submission_id)
+        .order_by(ReviewDecision.decided_at.desc())
+    )
+    result = await session.execute(query)
+    return list(result.scalars().all())

@@ -14,15 +14,20 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.infrastructure.db.models import DocumentRevision
+from app.core.security import RequireRole
+from app.domain.enums import UserRole
+from app.infrastructure.db.models import DocumentRevision, User
 from app.infrastructure.db.session import async_engine, get_async_session
 from app.services.analysis.deterministic_engine import BrandAutomatonCache
 
 router = APIRouter()
 
+AuthorizedAdmin = Annotated[User, Depends(RequireRole(UserRole.ADMINISTRATOR))]
+
 
 @router.get("/diagnostics", status_code=status.HTTP_200_OK, summary="Deep System Diagnostics & Telemetry")
 async def get_system_diagnostics(
+    admin: AuthorizedAdmin,
     session: Annotated[AsyncSession, Depends(get_async_session)],
 ) -> dict[str, Any]:
     """

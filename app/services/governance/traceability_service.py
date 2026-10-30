@@ -1,5 +1,5 @@
 """
-BrandShield AI - Evidence Traceability & Zero-Hallucination Audit Service.
+BrandShield AI - Evidence Traceability & Evidence-Linked Audit Service.
 Verifies that detected violations possess authoritative evidence grounding
 (linked_guideline_id or linked_fact_id) to eliminate ungrounded or hallucinated compliance claims.
 """
@@ -32,7 +32,7 @@ class TraceabilityAuditService:
             JOIN document_revisions dr ON f.revision_id = dr.id
             JOIN submissions s ON dr.submission_id = s.id
             WHERE s.workspace_id = :workspace_id
-              AND (:brand_profile_id IS NULL OR s.brand_profile_id = :brand_profile_id)
+              AND (CAST(:brand_profile_id AS UUID) IS NULL OR s.brand_profile_id = CAST(:brand_profile_id AS UUID))
         )
         SELECT 
             COUNT(*) AS total_findings,

@@ -47,10 +47,11 @@ class SeverityLevel(StrEnum):
 
 
 class TriageStatus(StrEnum):
-    """Tri-state confidence triage and zero-hallucination routing classifications."""
+    """Tri-state confidence triage and evidence routing classifications."""
     FLAGGED_HIGH_CONFIDENCE = "FLAGGED_HIGH_CONFIDENCE"
     ROUTED_TO_HUMAN_LOW_CONFIDENCE = "ROUTED_TO_HUMAN_LOW_CONFIDENCE"
     NEEDS_VERIFICATION_MISSING_EVIDENCE = "NEEDS_VERIFICATION_MISSING_EVIDENCE"
+    NEEDS_VERIFICATION = "NEEDS_VERIFICATION"
     STALE_FACT_REVERIFY = "STALE_FACT_REVERIFY"
 
 

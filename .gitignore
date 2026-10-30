@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+ # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -26,8 +26,10 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# Virtual environments
+# Virtual environments & secrets
 .env
+.env.*
+!.env.example
 .venv
 .venv_brandshield
 env/

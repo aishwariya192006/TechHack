@@ -78,6 +78,9 @@ async def seed_database(session: AsyncSession) -> dict[str, Any]:
         ("creator@acmefintech.com", "Alex Creator", UserRole.CREATOR),
         ("reviewer@acmefintech.com", "Morgan Reviewer", UserRole.REVIEWER),
         ("admin@acmefintech.com", "Sam Admin", UserRole.ADMINISTRATOR),
+        ("creator@acme.com", "Alex Creator", UserRole.CREATOR),
+        ("reviewer@acme.com", "Morgan Reviewer", UserRole.REVIEWER),
+        ("admin@acme.com", "Sam Admin", UserRole.ADMINISTRATOR),
     ]
 
     users_by_role: dict[UserRole, User] = {}
@@ -455,7 +458,7 @@ async def seed_database(session: AsyncSession) -> dict[str, Any]:
         (
             "All automated triage findings provide exact character offsets and direct links to approved guidelines or facts.",
             "https://acmefintech.com/compliance/engine-audit.pdf",
-            "Offset-preserving AST span tokenizer and zero-hallucination citations.",
+            "Offset-preserving AST span tokenizer and evidence-linked citations.",
             datetime(2025, 1, 1, tzinfo=timezone.utc),
             datetime(2028, 12, 31, tzinfo=timezone.utc),
         ),

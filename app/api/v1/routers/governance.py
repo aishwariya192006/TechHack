@@ -85,7 +85,7 @@ async def get_governance_report(
     "/traceability-metrics",
     response_model=TraceabilityMetricsResponse,
     status_code=status.HTTP_200_OK,
-    summary="Evidence Traceability & Zero-Hallucination Grounding Audit",
+    summary="Evidence Traceability & Evidence-Linked Grounding Audit",
 )
 async def get_traceability_metrics(
     auditor: AuthorizedAuditor,

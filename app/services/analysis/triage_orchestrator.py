@@ -3,7 +3,7 @@ BrandShield AI - Stage 4 Confidence Triage & Multi-Stage Intelligence Orchestrat
 Orchestrates the four core intelligence stages:
 1. Stage 1 - Deterministic Rule Engine (Aho-Corasick, FKGL, Passive Voice, Caps Abuse).
 2. Stage 2 - Temporal Fact & Hybrid RAG Retrieval Engine (RRF, Staleness, Missing Evidence).
-3. Stage 3 - Zero-Trust Privacy Gate & Circuit-Breaker LLM Router (PII Scrubber, Fallback Cache).
+3. Stage 3 - Privacy-Gated Boundary & Circuit-Breaker LLM Router (PII Scrubber, Fallback Cache).
 4. Stage 4 - Confidence Triage Boundaries & 15% Stochastic Automation-Bias Safeguard.
 """
 
@@ -43,7 +43,7 @@ from app.services.audit_service import AuditService
 
 settings = get_settings()
 
-AUTOMATION_BIAS_SAMPLE_RATE = 0.15  # 15% random shadow audit injection
+AUTOMATION_BIAS_SAMPLE_RATE = getattr(settings, "AUTOMATION_BIAS_SAMPLE_RATE", 0.15)
 
 
 @dataclass
@@ -64,13 +64,18 @@ class TriageOrchestrator:
     """
     Master Intelligence Pipeline Orchestrator for BrandShield AI.
     Executes deterministic checks first, anchors factual assertions in verified temporal ground truth,
-    applies zero-trust external privacy gating, and routes findings through calibrated confidence tiers.
+    applies privacy-gated external routing, and routes findings through calibrated confidence tiers.
     """
 
     @classmethod
-    def evaluate_automation_bias_safeguard(cls, sampling_rate: float = AUTOMATION_BIAS_SAMPLE_RATE) -> bool:
+    def evaluate_automation_bias_safeguard(
+        cls,
+        sampling_rate: float = AUTOMATION_BIAS_SAMPLE_RATE,
+        rng: Optional[random.Random] = None,
+    ) -> bool:
         """Evaluates whether finding should undergo shadow audit injection."""
-        return random.random() < sampling_rate
+        generator = rng or random
+        return generator.random() < sampling_rate
 
     @classmethod
     async def run_pipeline(
@@ -85,6 +90,7 @@ class TriageOrchestrator:
         preloaded_guidelines: Optional[list[BrandGuideline]] = None,
         preloaded_facts: Optional[list[ApprovedFact]] = None,
         audit_sample_rate: float = AUTOMATION_BIAS_SAMPLE_RATE,
+        rng: Optional[random.Random] = None,
     ) -> AnalysisPipelineResult:
         """
         Executes end-to-end 4-stage analysis pipeline and persists findings with audit trails.
@@ -128,7 +134,7 @@ class TriageOrchestrator:
         deterministic_hits, temporal_hits = await asyncio.gather(stage1_task, stage2_task)
 
         # ----------------------------------------------------------------------
-        # Stage 3: Zero-Trust Privacy Gate & Circuit-Breaker LLM Router
+        # Stage 3: Privacy Gate & Circuit-Breaker LLM Router
         # ----------------------------------------------------------------------
         tone_hits = await PrivacyGateRouter.analyze_tone_and_messaging(
             content_text=content_text,
@@ -210,7 +216,9 @@ class TriageOrchestrator:
             linked_f_id = tone.linked_fact_id
             has_valid_link = (linked_g_id is not None) or (linked_f_id is not None)
 
-            if tone.confidence_score >= 0.85 and has_valid_link:
+            if not has_valid_link:
+                status = TriageStatus.NEEDS_VERIFICATION
+            elif tone.confidence_score >= 0.85:
                 status = TriageStatus.FLAGGED_HIGH_CONFIDENCE
             else:
                 status = TriageStatus.ROUTED_TO_HUMAN_LOW_CONFIDENCE
@@ -245,8 +253,9 @@ class TriageOrchestrator:
             if f.triage_status == TriageStatus.FLAGGED_HIGH_CONFIDENCE
         ]
 
+        rand_gen = rng or random
         for finding in high_conf_findings:
-            if random.random() < audit_sample_rate:
+            if rand_gen.random() < audit_sample_rate:
                 finding.is_automation_bias_audit = True
                 finding.explanation_reason = (
                     "[AUTOMATION-BIAS SAFEGUARD: Human verification of primary evidence citation mandatory before approval] "
@@ -402,7 +411,7 @@ class TriageOrchestrator:
         }
 
         # ----------------------------------------------------------------------
-        # Stage 3: Zero-Trust Privacy Gate & Circuit-Breaker LLM Router
+        # Stage 3: Privacy Gate & Circuit-Breaker LLM Router
         # ----------------------------------------------------------------------
         t3_start = time.perf_counter()
         tone_hits = await PrivacyGateRouter.analyze_tone_and_messaging(

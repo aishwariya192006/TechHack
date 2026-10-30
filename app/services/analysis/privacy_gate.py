@@ -1,7 +1,7 @@
 """
-BrandShield AI - Stage 3 Zero-Trust Privacy Gate & Circuit-Breaker LLM Router.
+BrandShield AI - Stage 3 Privacy-Gated Boundary & Circuit-Breaker LLM Router.
 Enforces multi-tier privacy protections:
-1. Zero-trust egress verification (blocks external AI if contract, retention, or provider clearance is missing).
+1. Privacy-gated egress verification (blocks external AI if contract, retention, or provider clearance is missing).
 2. Regex PII and Secret Scrubbing (redacts emails, phone numbers, API keys, SSNs, internal codenames).
 3. Monitored circuit breaker with async timeout.
 4. Demo-risk mitigation fallback to pre-verified cache in <30ms on degradation.
@@ -175,7 +175,7 @@ class ToneAnalysisFinding:
 class PrivacyGateRouter:
     """
     Stage 3 Engine:
-    Zero-trust policy evaluator gating all external AI network egress.
+    Privacy-gated policy evaluator gating all external AI network egress.
     Applies PII redaction, circuit breakers, and sub-30ms demo fallback caching.
     """
 
@@ -211,7 +211,7 @@ class PrivacyGateRouter:
         if approved and requested_provider not in approved:
             return False, f"Privacy Gate block: Provider '{requested_provider}' is not in approved provider roster: {approved}."
 
-        return True, "Egress cleared under zero-trust enterprise policy."
+        return True, "Egress cleared under verified enterprise privacy policy."
 
     @classmethod
     async def analyze_tone_and_messaging(
@@ -395,7 +395,7 @@ class PrivacyGateRouter:
         brand_profile: BrandProfile,
     ) -> list[ToneAnalysisFinding]:
         """
-        Local on-premises tone scoring executed when Zero-Trust Privacy Gate blocks external AI.
+        Local on-premises tone scoring executed when Privacy Gate blocks external AI egress.
         Computes tone formality and prohibited sentiment discrepancies using local heuristics.
         """
         findings: list[ToneAnalysisFinding] = []

@@ -39,7 +39,7 @@ See the full authoritative specification in [ARCHITECTURE.md](file:///c:/Users/A
 |               CONFIDENCE TRIAGE & AUTOMATION-BIAS SAFEGUARD ENGINE                |
 |  * High Confidence -> Flagged + Source Link                                       |
 |  * Low/Ambiguous -> Routed to Human Queue                                         |
-|  * Missing Evidence -> Marked "Needs Verification" (Zero Hallucination Guarantee) |
+|  * Missing Evidence -> Marked "Needs Verification" (Evidence-Linked Rule)         |
 |  * Stochastic Audit -> Injects Random Double-Check Flags for Reviewers            |
 +-----------------------------------------+-----------------------------------------+
                                           |

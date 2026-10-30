@@ -91,7 +91,7 @@ class SubmissionStateMachine:
         if target_state == WorkflowState.APPROVED:
             if is_ai:
                 raise ForbiddenProblem(
-                    detail="Zero-Trust Governance Breach: Automated AI algorithms are strictly prohibited from issuing final document approval.",
+                    detail="Governance Policy Invariant: Automated AI algorithms are strictly prohibited from issuing final document approval.",
                     required_roles=[UserRole.REVIEWER.value, UserRole.ADMINISTRATOR.value],
                     current_role="AI_AGENT",
                 )
