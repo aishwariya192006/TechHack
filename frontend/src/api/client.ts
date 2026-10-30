@@ -24,7 +24,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: 60000, // 60s timeout accommodates Render free-tier container spin-ups
 });
 
 // Interceptor: inject JWT bearer token
