@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import TiltCard from '../components/TiltCard';
 
 export default function GuidelinesPage() {
-  const { role, activeBrandProfileId } = useAuth();
+  const { user, role, activeBrandProfileId } = useAuth();
   const [tab, setTab] = useState<'guidelines' | 'facts'>('guidelines');
   const [guidelines, setGuidelines] = useState<BrandGuidelineItem[]>([]);
   const [facts, setFacts] = useState<ApprovedFactItem[]>([]);
@@ -86,7 +86,8 @@ export default function GuidelinesPage() {
         evidence_excerpt: newEvidence || newFactStatement,
         verification_date: now,
         expiry_date: new Date(newExpiry).toISOString(),
-        responsible_owner_id: '201a2561-e7b9-4f3d-b2f8-d93624575292',
+        responsible_owner_id: user?.id,
+        brand_profile_id: activeBrandProfileId,
         embedding,
       });
       setShowAddFModal(false);

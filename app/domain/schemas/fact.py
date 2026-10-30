@@ -17,10 +17,10 @@ class ApprovedFactBase(BaseModel):
 
 
 class ApprovedFactCreate(ApprovedFactBase):
-    workspace_id: uuid.UUID
+    workspace_id: Optional[uuid.UUID] = None
     brand_profile_id: Optional[uuid.UUID] = None
-    responsible_owner_id: uuid.UUID
-    embedding: list[float] = Field(..., min_length=1536, max_length=1536)
+    responsible_owner_id: Optional[uuid.UUID] = None
+    embedding: Optional[list[float]] = Field(default_factory=lambda: [0.01] * 1536)
 
 
 class ApprovedFactUpdate(BaseModel):

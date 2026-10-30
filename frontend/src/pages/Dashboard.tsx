@@ -82,7 +82,7 @@ export default function Dashboard() {
           style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46 }}
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          <span>{loading ? 'Synchronizing…' : 'Sync Telemetry'}</span>
+          <span>{loading ? 'Synchronizing…' : 'Refresh Metrics'}</span>
         </button>
       </div>
 

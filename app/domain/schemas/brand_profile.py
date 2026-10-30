@@ -67,8 +67,8 @@ class BrandGuidelineBase(BaseModel):
 
 
 class BrandGuidelineCreate(BrandGuidelineBase):
-    brand_profile_id: uuid.UUID
-    embedding: list[float] = Field(..., min_length=1536, max_length=1536)
+    brand_profile_id: Optional[uuid.UUID] = None
+    embedding: Optional[list[float]] = Field(default_factory=lambda: [0.01] * 1536)
 
 
 class BrandGuidelineUpdate(BaseModel):

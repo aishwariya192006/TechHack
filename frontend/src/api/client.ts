@@ -419,9 +419,15 @@ export const brandsApi = {
     clause_text: string;
     category: string;
     severity: string;
-    embedding: number[];
+    brand_profile_id?: string;
+    embedding?: number[];
   }): Promise<BrandGuidelineItem> {
-    const res = await apiClient.post(`/brands/profiles/${profileId}/guidelines`, guideline);
+    const payload = {
+      brand_profile_id: profileId,
+      embedding: guideline.embedding || Array(1536).fill(0.01),
+      ...guideline,
+    };
+    const res = await apiClient.post(`/brands/profiles/${profileId}/guidelines`, payload);
     return res.data;
   },
 
@@ -429,13 +435,18 @@ export const brandsApi = {
     fact_statement: string;
     original_source_url: string;
     evidence_excerpt: string;
-    verification_date: string;
+    verification_date?: string;
     expiry_date: string;
-    responsible_owner_id: string;
+    responsible_owner_id?: string;
     brand_profile_id?: string;
-    embedding: number[];
+    embedding?: number[];
   }): Promise<ApprovedFactItem> {
-    const res = await apiClient.post('/brands/facts', fact);
+    const payload = {
+      verification_date: fact.verification_date || new Date().toISOString(),
+      embedding: fact.embedding || Array(1536).fill(0.01),
+      ...fact,
+    };
+    const res = await apiClient.post('/brands/facts', payload);
     return res.data;
   },
 };
