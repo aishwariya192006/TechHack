@@ -385,6 +385,15 @@ export const workflowApi = {
 };
 
 export const brandsApi = {
+  async getActiveProfile(): Promise<BrandProfileItem | null> {
+    try {
+      const res = await apiClient.get<BrandProfileItem>('/brands/active-profile');
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
+
   async listProfiles(): Promise<BrandProfileItem[]> {
     // Try admin profiles first; fall back to specific seeded profile
     try {

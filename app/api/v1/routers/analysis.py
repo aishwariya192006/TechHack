@@ -91,13 +91,21 @@ async def run_analysis_pipeline(
         )
 
     target_profile_id = payload.brand_profile_id or submission.brand_profile_id
-    profile = await session.get(BrandProfile, target_profile_id)
+    profile = await session.get(BrandProfile, target_profile_id) if target_profile_id else None
     if not profile or profile.workspace_id != current_user.workspace_id:
-        raise NotFoundProblem(
-            detail=f"Brand profile '{target_profile_id}' not found in workspace.",
-            resource_type="BrandProfile",
-            resource_id=str(target_profile_id),
+        fallback_stmt = (
+            select(BrandProfile)
+            .where(BrandProfile.workspace_id == current_user.workspace_id)
+            .order_by(BrandProfile.created_at.asc())
         )
+        fb_res = await session.execute(fallback_stmt)
+        profile = fb_res.scalars().first()
+        if not profile:
+            raise NotFoundProblem(
+                detail=f"Brand profile '{target_profile_id}' not found in workspace.",
+                resource_type="BrandProfile",
+                resource_id=str(target_profile_id),
+            )
 
     # 2. Execute Pipeline
     kwargs = {
@@ -192,13 +200,21 @@ async def analyze_live_text(
     """
     start_time = time.perf_counter()
 
-    profile = await session.get(BrandProfile, payload.brand_profile_id)
+    profile = await session.get(BrandProfile, payload.brand_profile_id) if payload.brand_profile_id else None
     if not profile or profile.workspace_id != current_user.workspace_id:
-        raise NotFoundProblem(
-            detail=f"Brand profile '{payload.brand_profile_id}' not found in workspace.",
-            resource_type="BrandProfile",
-            resource_id=str(payload.brand_profile_id),
+        fallback_stmt = (
+            select(BrandProfile)
+            .where(BrandProfile.workspace_id == current_user.workspace_id)
+            .order_by(BrandProfile.created_at.asc())
         )
+        fb_res = await session.execute(fallback_stmt)
+        profile = fb_res.scalars().first()
+        if not profile:
+            raise NotFoundProblem(
+                detail=f"Brand profile '{payload.brand_profile_id}' not found in workspace.",
+                resource_type="BrandProfile",
+                resource_id=str(payload.brand_profile_id),
+            )
 
     # 0. Query active guidelines and workspace review rules to link findings to primary evidence sources
     ws = await session.get(Workspace, current_user.workspace_id)

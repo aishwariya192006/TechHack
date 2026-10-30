@@ -8,7 +8,9 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
 
-  // Form states: no prefilled credentials
+  // Form states
+  const [selectedRole, setSelectedRole] = useState<'Creator' | 'Reviewer' | 'Administrator'>('Creator');
+  const [signupRole, setSignupRole] = useState<'Creator' | 'Reviewer' | 'Administrator'>('Creator');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,6 +26,21 @@ export default function LoginPage() {
     navigate('/dashboard', { replace: true });
     return null;
   }
+
+  const handleSelectRole = (role: 'Creator' | 'Reviewer' | 'Administrator') => {
+    setSelectedRole(role);
+    setError(null);
+    if (role === 'Creator') {
+      setEmail('creator@acme.com');
+      setPassword('DemoSecure2026!');
+    } else if (role === 'Reviewer') {
+      setEmail('reviewer@acme.com');
+      setPassword('DemoSecure2026!');
+    } else if (role === 'Administrator') {
+      setEmail('admin@acme.com');
+      setPassword('DemoSecure2026!');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,9 +309,58 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <h1 className="signin-main-heading" style={{ marginBottom: 20 }}>
+            <h1 className="signin-main-heading" style={{ marginBottom: 16 }}>
               {mode === 'signup' ? 'Create Account' : 'Sign In'}
             </h1>
+
+            {/* Role Selection Row */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#475569', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  {mode === 'signin' ? 'Role Quick-Select:' : 'Account Role:'}
+                </label>
+                {mode === 'signin' && (
+                  <span style={{ fontSize: 11, color: '#4f46e5', fontWeight: 600 }}>Demo accounts</span>
+                )}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                {(['Creator', 'Reviewer', 'Administrator'] as const).map((r) => {
+                  const isSelected = mode === 'signin' ? selectedRole === r : signupRole === r;
+                  return (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => {
+                        if (mode === 'signin') {
+                          handleSelectRole(r);
+                        } else {
+                          setSignupRole(r);
+                        }
+                      }}
+                      style={{
+                        padding: '8px 4px',
+                        borderRadius: 8,
+                        border: isSelected ? '1.5px solid #4f46e5' : '1px solid rgba(0,0,0,0.1)',
+                        background: isSelected ? '#4f46e5' : 'rgba(255,255,255,0.7)',
+                        color: isSelected ? '#ffffff' : '#1e293b',
+                        fontWeight: 700,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {r}
+                    </button>
+                  );
+                })}
+              </div>
+              {mode === 'signup' && signupRole !== 'Creator' && (
+                <div style={{ fontSize: 11.5, color: '#92400e', marginTop: 8, padding: '8px 10px', background: 'rgba(254,243,199,0.9)', borderRadius: 8, border: '1px solid rgba(245,158,11,0.3)', lineHeight: 1.4 }}>
+                  {signupRole} privileges are managed. To test as a <strong>{signupRole}</strong>, switch to the <strong>Sign In</strong> tab and select <strong>{signupRole}</strong> to authenticate immediately.
+                </div>
+              )}
+            </div>
 
             {/* In Sign Up mode: First Name & Last Name */}
             {mode === 'signup' && (
@@ -362,13 +428,6 @@ export default function LoginPage() {
                 </button>
               </div>
             </fieldset>
-
-            {/* Creator-only badge in Sign Up mode */}
-            {mode === 'signup' && (
-              <div style={{ fontSize: 12, color: '#475569', marginBottom: 16, padding: '8px 12px', background: 'rgba(255,255,255,0.7)', borderRadius: 10, border: '1px solid rgba(0,0,0,0.06)' }}>
-                New accounts are Creator only. Reviewer and Administrator roles are provisioned by an administrator.
-              </div>
-            )}
 
             {/* Action Button */}
             <button

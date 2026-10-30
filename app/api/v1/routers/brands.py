@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundProblem, ValidationErrorProblem
-from app.core.security import RequireRole
+from app.core.security import RequireRole, get_current_user
 from app.domain.enums import AuditAction, UserRole
 from app.domain.schemas.asset import (
     ApprovedBrandAssetCreate,
@@ -84,6 +84,27 @@ async def create_brand_profile(
     )
     await session.commit()
     await session.refresh(profile)
+    return profile
+
+
+@router.get("/active-profile", response_model=BrandProfileRead)
+async def get_active_brand_profile(
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+) -> BrandProfile:
+    """Retrieves active brand profile for current user's workspace, accessible to all workspace roles."""
+    stmt = (
+        select(BrandProfile)
+        .where(BrandProfile.workspace_id == current_user.workspace_id)
+        .order_by(BrandProfile.created_at.asc())
+    )
+    res = await session.execute(stmt)
+    profile = res.scalars().first()
+    if not profile:
+        raise NotFoundProblem(
+            detail="No brand profile found for workspace.",
+            resource_type="BrandProfile",
+        )
     return profile
 
 

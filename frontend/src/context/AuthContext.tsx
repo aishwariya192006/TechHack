@@ -52,9 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(me);
       // Load brand profile
       try {
-        const profiles = await brandsApi.listProfiles();
-        if (profiles.length > 0) {
-          setActiveBrandProfileId(profiles[0].id);
+        const active = await brandsApi.getActiveProfile();
+        if (active?.id) {
+          setActiveBrandProfileId(active.id);
+        } else {
+          const profiles = await brandsApi.listProfiles();
+          if (profiles.length > 0) {
+            setActiveBrandProfileId(profiles[0].id);
+          }
         }
       } catch {
         // keep default
@@ -72,9 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const me = await authApi.getMe();
       setUser(me);
       try {
-        const profiles = await brandsApi.listProfiles();
-        if (profiles.length > 0) {
-          setActiveBrandProfileId(profiles[0].id);
+        const active = await brandsApi.getActiveProfile();
+        if (active?.id) {
+          setActiveBrandProfileId(active.id);
+        } else {
+          const profiles = await brandsApi.listProfiles();
+          if (profiles.length > 0) {
+            setActiveBrandProfileId(profiles[0].id);
+          }
         }
       } catch {
         // keep default
