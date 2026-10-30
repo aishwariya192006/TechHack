@@ -49,3 +49,4 @@ class ReviewRulesUpdate(BaseModel):
     model_config = {
         "extra": "ignore",
     }
+
