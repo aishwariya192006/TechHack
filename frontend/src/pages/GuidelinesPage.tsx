@@ -51,13 +51,26 @@ export default function GuidelinesPage() {
 
   const handleCreateGuideline = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newClauseId || !newClauseText) return;
+    const trimmedId = newClauseId.trim();
+    const trimmedText = newClauseText.trim();
+    if (!trimmedId || !trimmedText) return;
+    if (trimmedId.length < 3) {
+      setError('Clause Identifier must be at least 3 characters (e.g. SEC-TONE-01).');
+      return;
+    }
+    if (trimmedText.length < 10) {
+      setError('Clause Rule Specification must be at least 10 characters long.');
+      return;
+    }
     setAddingG(true);
+    setError(null);
     try {
       const embedding = Array(1536).fill(0.01);
-      await brandsApi.createGuideline(activeBrandProfileId, {
-        clause_identifier: newClauseId,
-        clause_text: newClauseText,
+      const profileId = activeBrandProfileId || 'fd91f3db-f7a5-4002-8226-4ccc75777c4f';
+      await brandsApi.createGuideline(profileId, {
+        brand_profile_id: profileId,
+        clause_identifier: trimmedId,
+        clause_text: trimmedText,
         category: newCategory,
         severity: newSeverity,
         embedding,
@@ -341,6 +354,8 @@ export default function GuidelinesPage() {
                     placeholder="e.g. SEC-TONE-05"
                     value={newClauseId}
                     onChange={(e) => setNewClauseId(e.target.value)}
+                    minLength={3}
+                    maxLength={64}
                     required
                   />
                 </div>
@@ -370,9 +385,10 @@ export default function GuidelinesPage() {
                     className="form-input"
                     rows={4}
                     style={{ width: '100%', borderRadius: 10, lineHeight: 1.5 }}
-                    placeholder="State rule prohibition or requirement clearly…"
+                    placeholder="State rule prohibition or requirement clearly (minimum 10 characters)…"
                     value={newClauseText}
                     onChange={(e) => setNewClauseText(e.target.value)}
+                    minLength={10}
                     required
                   />
                 </div>

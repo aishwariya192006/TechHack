@@ -23,8 +23,8 @@ const ROLE_EMAILS: Record<'CREATOR' | 'REVIEWER' | 'ADMINISTRATOR', string> = {
   ADMINISTRATOR: 'admin@acme.com',
 };
 
-// Seeded Acme FinTech Global Profile ID (fallback)
-const DEFAULT_BRAND_PROFILE_ID = '79978154-1c75-4996-9293-b3a7886f33a8';
+// Seeded Acme FinTech Global Profile ID (verified from database)
+const DEFAULT_BRAND_PROFILE_ID = 'fd91f3db-f7a5-4002-8226-4ccc75777c4f';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<CurrentUser | null>(null);

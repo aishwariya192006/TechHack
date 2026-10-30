@@ -45,7 +45,12 @@ apiClient.interceptors.response.use(
       message = "Can't reach the server. It may be waking up, try again in a minute.";
     } else if (error.response?.data) {
       const data = error.response.data;
-      message = data.detail || data.title || data.message || JSON.stringify(data);
+      if (Array.isArray(data.invalid_params) && data.invalid_params.length > 0) {
+        const details = data.invalid_params.map((p: any) => `${p.name?.replace('body.', '') || 'field'}: ${p.reason}`).join('; ');
+        message = `${data.detail || 'Validation error'} (${details})`;
+      } else {
+        message = data.detail || data.title || data.message || JSON.stringify(data);
+      }
     }
     return Promise.reject(new Error(message));
   }
@@ -438,12 +443,13 @@ export const brandsApi = {
     brand_profile_id?: string;
     embedding?: number[];
   }): Promise<BrandGuidelineItem> {
+    const resolvedProfileId = profileId || 'fd91f3db-f7a5-4002-8226-4ccc75777c4f';
     const payload = {
-      brand_profile_id: profileId,
+      brand_profile_id: resolvedProfileId,
       embedding: guideline.embedding || Array(1536).fill(0.01),
       ...guideline,
     };
-    const res = await apiClient.post(`/brands/profiles/${profileId}/guidelines`, payload);
+    const res = await apiClient.post(`/brands/profiles/${resolvedProfileId}/guidelines`, payload);
     return res.data;
   },
 
@@ -460,6 +466,7 @@ export const brandsApi = {
     const payload = {
       verification_date: fact.verification_date || new Date().toISOString(),
       embedding: fact.embedding || Array(1536).fill(0.01),
+      brand_profile_id: fact.brand_profile_id || 'fd91f3db-f7a5-4002-8226-4ccc75777c4f',
       ...fact,
     };
     const res = await apiClient.post('/brands/facts', payload);
