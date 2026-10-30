@@ -17,7 +17,6 @@ import {
 import { dashboardApi, auditApi, type DashboardSummary, type GovernanceReport, type AuditLogItem } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import TiltCard from '../components/TiltCard';
-import ThreeDShieldBadge from '../components/ThreeDShieldBadge';
 
 export default function Dashboard() {
   const { role } = useAuth();
@@ -65,25 +64,9 @@ export default function Dashboard() {
 
   return (
     <div className="fade-in">
-      {/* ── 3D Spatial Header with Holographic Integrity Seal ── */}
+      {/* ── Page Header ── */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <span style={{ 
-              background: 'linear-gradient(135deg, #4f46e5, #06b6d4)', 
-              color: '#fff', 
-              padding: '4px 10px', 
-              borderRadius: 999, 
-              fontSize: 11, 
-              fontWeight: 800, 
-              letterSpacing: '0.06em', 
-              textTransform: 'uppercase',
-              boxShadow: '0 4px 12px rgba(79,70,229,0.3)'
-            }}>
-              3D Quantum Telemetry
-            </span>
-            <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Active Node: Acme FinTech</span>
-          </div>
           <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-0.02em', color: '#0f172a' }}>
             Compliance &amp; Governance Overview
           </h1>
@@ -92,23 +75,15 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <ThreeDShieldBadge
-            isValid={true}
-            totalBlocks={recentLogs.length > 0 ? recentLogs[0].sequence_id : 27}
-            subtitle="SHA-256 Merkle Ledger"
-          />
-
-          <button
-            className="btn btn-secondary btn-3d"
-            onClick={fetchDashboardData}
-            disabled={loading}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46 }}
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            <span>{loading ? 'Synchronizing…' : 'Sync Telemetry'}</span>
-          </button>
-        </div>
+        <button
+          className="btn btn-secondary btn-3d"
+          onClick={fetchDashboardData}
+          disabled={loading}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46 }}
+        >
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          <span>{loading ? 'Synchronizing…' : 'Sync Telemetry'}</span>
+        </button>
       </div>
 
       {error && (
