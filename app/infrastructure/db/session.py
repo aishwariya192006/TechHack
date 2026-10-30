@@ -32,6 +32,7 @@ async_engine: AsyncEngine = create_async_engine(
     pool_timeout=settings.DB_POOL_TIMEOUT,
     pool_recycle=settings.DB_POOL_RECYCLE,
     pool_pre_ping=True,  # Proactively verifies connection liveness to handle stale socket drops
+    connect_args={"statement_cache_size": 0},  # Required for Supabase transaction pooler (port 6543)
     future=True,
 )
 
